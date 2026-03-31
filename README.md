@@ -153,10 +153,40 @@ EndpointForge/
 - **Framework:** MITRE ATT&CK
 - **Export:** Markdown, JSON
 
-## Author
+## Roadmap
 
-**Rootless-Ghost** — [@Rootless_Ghost](https://twitter.com/Rootless_Ghost)
+### v1.1 — Wazuh SIEM Integration
+- [ ] JSON log export to Wazuh agent monitored path (`/var/ossec/logs/endpointforge/`)
+- [ ] Custom Wazuh decoder for EndpointForge JSON log format
+- [ ] Custom Wazuh rules mapped to MITRE ATT&CK from EndpointForge findings
+- [ ] Wazuh Active Response mode — auto-trigger scans when a rule fires on the endpoint
+- [ ] Dashboard integration — EndpointForge findings visible in Wazuh MITRE ATT&CK panel
+
+### v1.2 — Detection Enhancements
+- [ ] Windows Event Log analysis (Security, Sysmon, PowerShell Operational)
+- [ ] DNS cache inspection for C2 beacon indicators
+- [ ] Named pipe enumeration with known-bad pattern matching
+- [ ] DLL hijack path detection (writable DLL search order locations)
+- [ ] Loaded driver enumeration with unsigned driver flagging
+
+### v1.3 — Reporting & Correlation
+- [ ] Sigma rule matching against collected endpoint data (pairs with SigmaForge)
+- [ ] YARA scanning of suspicious executables (pairs with YaraForge)
+- [ ] Timeline view — unified chronological display across all modules
+- [ ] Differential scanning — compare current state against a saved baseline snapshot
+- [ ] PDF report export
+
+### Future
+- [ ] Remote scanning via WinRM/SSH (multi-endpoint from a single console)
+- [ ] Scheduled automated scans with alerting thresholds
+- [ ] Integration with EndpointTriage for continuous monitoring + on-demand forensic collection
+- [ ] VirusTotal API hash lookup for flagged processes and files
+- [ ] Snort rule generation from suspicious network findings (pairs with SnortForge)
 
 ## License
 
 MIT License
+
+## Author
+
+**Rootless-Ghost** — [@Rootless_Ghost](https://twitter.com/Rootless_Ghost)
