@@ -204,7 +204,8 @@ def api_generate_report():
         report = report_gen.generate(scan_data, report_format)
         return jsonify({'status': 'success', 'data': report})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during report generation")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/report/export', methods=['POST'])
@@ -225,7 +226,8 @@ def api_export_report():
 
         return send_file(filepath, as_attachment=True, download_name=filename)
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during report export")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 # ──────────────────────────────────────────────
