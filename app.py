@@ -239,7 +239,21 @@ def api_wazuh_setup():
     """Setup Wazuh exporter (create log directory)."""
     try:
         result = wazuh_exp.setup()
-        return jsonify({'status': result['status'], 'data': result})
+        if result.get('status') == 'success':
+            # Expose only non-sensitive setup information
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'log_path': result.get('log_path'),
+                    'log_dir': result.get('log_dir')
+                }
+            })
+        # Log full result server-side but return a generic error to the client
+        logger.error("Wazuh setup reported error: %s", result)
+        return jsonify({
+            'status': 'error',
+            'message': 'A Wazuh-related internal error has occurred.'
+        }), 500
     except Exception as e:
         logger.exception("Error during Wazuh setup")
         return jsonify({'status': 'error',
