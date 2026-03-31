@@ -72,9 +72,11 @@ class WazuhExporter:
                 'log_path': self.log_path
             }
         except Exception as e:
+            # Log full exception details server-side, but return a generic message to the caller
+            logger.exception("Unexpected error during WazuhExporter setup")
             return {
                 'status': 'error',
-                'message': str(e),
+                'message': 'Unexpected error during Wazuh exporter setup.',
                 'log_path': self.log_path
             }
 
