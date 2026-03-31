@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">&#x1F4CB; Reports &amp; Export</h1>
+    <p class="page-subtitle">Generate Markdown and JSON reports with MITRE ATT&CK mapping and severity scoring</p>
+</div>
+
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="generateReport('markdown')">&#x1F4DD; Generate Markdown</button>
+        <button class="btn" onclick="generateReport('json')">{ } Generate JSON</button>
+        <button class="btn btn-success" onclick="exportReport('markdown')">&#x2B07; Export .md</button>
+        <button class="btn btn-success" onclick="exportReport('json')">&#x2B07; Export .json</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Report Preview</span>
+    </div>
+    <pre id="report-output" style="
+        font-family: var(--font-mono);
+        font-size: 12px;
+        background: var(--bg-primary);
+        padding: 20px;
+        border-radius: var(--radius);
+        overflow-x: auto;
+        max-height: 600px;
+        overflow-y: auto;
+        color: var(--text-secondary);
+        line-height: 1.8;
+        white-space: pre-wrap;
+    ">Run a full scan or load demo data first, then generate a report.
+
+Reports include:
+  - Executive summary with severity breakdown
+  - Findings from all monitoring pillars
+  - MITRE ATT&CK technique mapping table
+  - Remediation recommendations
+
+Export formats:
+  - Markdown (.md) — for documentation and wikis
+  - JSON (.json) — for SIEM ingestion and automation</pre>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Quick Actions</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn" onclick="loadDemoData('full')">&#x1F4E1; Load Demo Data First</button>
+        <button class="btn" onclick="runFullScan()">&#x25B6; Run Full Scan First</button>
+    </div>
+    <p style="margin-top: 12px; font-size: 13px; color: var(--text-secondary);">
+        Reports are generated from the most recent scan data. Run a scan or load demo data before generating.
+    </p>
+</div>
+{% endblock %}

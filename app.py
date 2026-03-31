@@ -1,0 +1,334 @@
+"""
+EndpointForge - Cross-Platform Endpoint Security Monitor
+A lightweight host-based intrusion detection and endpoint triage tool
+with MITRE ATT&CK mapping for Windows and Linux systems.
+
+Author: Rootless-Ghost
+Version: 1.0.0
+"""
+
+from flask import Flask, render_template, request, jsonify, send_file
+from datetime import datetime
+import json
+import os
+import platform
+
+# Import endpoint modules
+from modules.process_monitor import ProcessMonitor
+from modules.network_monitor import NetworkMonitor
+from modules.filesystem_monitor import FileSystemMonitor
+from modules.registry_monitor import RegistryMonitor
+from modules.persistence_monitor import PersistenceMonitor
+from modules.report_generator import ReportGenerator
+from modules.wazuh_exporter import WazuhExporter
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.urandom(24)
+
+# Detect OS at startup
+CURRENT_OS = platform.system().lower()  # 'windows' or 'linux'
+
+# Initialize modules
+process_mon = ProcessMonitor()
+network_mon = NetworkMonitor()
+filesystem_mon = FileSystemMonitor()
+registry_mon = RegistryMonitor()
+persistence_mon = PersistenceMonitor()
+report_gen = ReportGenerator()
+wazuh_exp = WazuhExporter()
+
+
+# ──────────────────────────────────────────────
+# ROUTES - Pages
+# ──────────────────────────────────────────────
+
+@app.route('/')
+def dashboard():
+    """Main dashboard - system overview and scan controls."""
+    return render_template('dashboard.html', os_type=CURRENT_OS)
+
+
+@app.route('/processes')
+def processes():
+    """Process execution analysis page."""
+    return render_template('processes.html', os_type=CURRENT_OS)
+
+
+@app.route('/network')
+def network():
+    """Network connections analysis page."""
+    return render_template('network.html', os_type=CURRENT_OS)
+
+
+@app.route('/filesystem')
+def filesystem():
+    """File system integrity monitoring page."""
+    return render_template('filesystem.html', os_type=CURRENT_OS)
+
+
+@app.route('/registry')
+def registry():
+    """Registry modifications analysis page (Windows only)."""
+    return render_template('registry.html', os_type=CURRENT_OS)
+
+
+@app.route('/persistence')
+def persistence():
+    """Persistence mechanism detection page."""
+    return render_template('persistence.html', os_type=CURRENT_OS)
+
+
+@app.route('/reports')
+def reports():
+    """Report generation and export page."""
+    return render_template('reports.html', os_type=CURRENT_OS)
+
+
+# ──────────────────────────────────────────────
+# API ROUTES - Data Collection & Analysis
+# ──────────────────────────────────────────────
+
+@app.route('/api/system-info', methods=['GET'])
+def api_system_info():
+    """Get basic system information."""
+    try:
+        info = {
+            'os': platform.system(),
+            'os_version': platform.version(),
+            'hostname': platform.node(),
+            'architecture': platform.machine(),
+            'processor': platform.processor(),
+            'python_version': platform.python_version(),
+            'scan_time': datetime.now().isoformat()
+        }
+        return jsonify({'status': 'success', 'data': info})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/scan/processes', methods=['POST'])
+def api_scan_processes():
+    """Scan running processes and analyze for anomalies."""
+    try:
+        results = process_mon.scan()
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/scan/network', methods=['POST'])
+def api_scan_network():
+    """Scan active network connections."""
+    try:
+        results = network_mon.scan()
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/scan/filesystem', methods=['POST'])
+def api_scan_filesystem():
+    """Scan filesystem for integrity changes."""
+    try:
+        mode = request.json.get('mode', 'baseline')  # 'baseline' or 'check'
+        paths = request.json.get('paths', [])
+        results = filesystem_mon.scan(mode=mode, custom_paths=paths)
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/scan/registry', methods=['POST'])
+def api_scan_registry():
+    """Scan Windows registry for suspicious modifications."""
+    try:
+        if CURRENT_OS != 'windows':
+            return jsonify({
+                'status': 'info',
+                'message': 'Registry analysis is only available on Windows systems.',
+                'data': {'findings': [], 'os_supported': False}
+            })
+        results = registry_mon.scan()
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/scan/persistence', methods=['POST'])
+def api_scan_persistence():
+    """Scan for persistence mechanisms."""
+    try:
+        results = persistence_mon.scan()
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/scan/full', methods=['POST'])
+def api_full_scan():
+    """Run a complete endpoint scan across all modules."""
+    try:
+        results = {
+            'scan_time': datetime.now().isoformat(),
+            'os': CURRENT_OS,
+            'hostname': platform.node(),
+            'processes': process_mon.scan(),
+            'network': network_mon.scan(),
+            'filesystem': filesystem_mon.scan(mode='check'),
+            'persistence': persistence_mon.scan()
+        }
+        if CURRENT_OS == 'windows':
+            results['registry'] = registry_mon.scan()
+
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/report/generate', methods=['POST'])
+def api_generate_report():
+    """Generate a report from scan results."""
+    try:
+        scan_data = request.json.get('scan_data', {})
+        report_format = request.json.get('format', 'markdown')  # 'markdown' or 'json'
+        report = report_gen.generate(scan_data, report_format)
+        return jsonify({'status': 'success', 'data': report})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/report/export', methods=['POST'])
+def api_export_report():
+    """Export report as downloadable file."""
+    try:
+        scan_data = request.json.get('scan_data', {})
+        report_format = request.json.get('format', 'markdown')
+        report = report_gen.generate(scan_data, report_format)
+
+        ext = 'md' if report_format == 'markdown' else 'json'
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'EndpointForge_Report_{timestamp}.{ext}'
+        filepath = os.path.join('exports', filename)
+
+        with open(filepath, 'w') as f:
+            f.write(report['content'])
+
+        return send_file(filepath, as_attachment=True, download_name=filename)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# ──────────────────────────────────────────────
+# WAZUH INTEGRATION
+# ──────────────────────────────────────────────
+
+@app.route('/api/wazuh/setup', methods=['POST'])
+def api_wazuh_setup():
+    """Setup Wazuh exporter (create log directory)."""
+    try:
+        result = wazuh_exp.setup()
+        return jsonify({'status': result['status'], 'data': result})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/wazuh/export', methods=['POST'])
+def api_wazuh_export():
+    """Export scan findings to Wazuh log file."""
+    try:
+        scan_data = request.json.get('scan_data', {})
+        result = wazuh_exp.export_findings(scan_data)
+        return jsonify({'status': 'success', 'data': result})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/wazuh/status', methods=['GET'])
+def api_wazuh_status():
+    """Get Wazuh exporter status."""
+    try:
+        status = wazuh_exp.get_status()
+        return jsonify({'status': 'success', 'data': status})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/wazuh/clear', methods=['POST'])
+def api_wazuh_clear():
+    """Clear the Wazuh export log file."""
+    try:
+        result = wazuh_exp.clear_log()
+        return jsonify({'status': result['status'], 'data': result})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/wazuh/demo', methods=['GET'])
+def api_wazuh_demo():
+    """Preview what Wazuh export entries look like."""
+    try:
+        demo = wazuh_exp.get_demo_export()
+        return jsonify({'status': 'success', 'data': demo})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# ──────────────────────────────────────────────
+# DEMO MODE - Simulated data for portfolio demos
+# ──────────────────────────────────────────────
+
+@app.route('/api/demo/processes', methods=['GET'])
+def demo_processes():
+    """Return simulated process data for demo/portfolio purposes."""
+    demo_data = process_mon.get_demo_data()
+    return jsonify({'status': 'success', 'data': demo_data, 'mode': 'demo'})
+
+
+@app.route('/api/demo/network', methods=['GET'])
+def demo_network():
+    """Return simulated network data for demo/portfolio purposes."""
+    demo_data = network_mon.get_demo_data()
+    return jsonify({'status': 'success', 'data': demo_data, 'mode': 'demo'})
+
+
+@app.route('/api/demo/filesystem', methods=['GET'])
+def demo_filesystem():
+    """Return simulated FIM data for demo/portfolio purposes."""
+    demo_data = filesystem_mon.get_demo_data()
+    return jsonify({'status': 'success', 'data': demo_data, 'mode': 'demo'})
+
+
+@app.route('/api/demo/registry', methods=['GET'])
+def demo_registry():
+    """Return simulated registry data for demo/portfolio purposes."""
+    demo_data = registry_mon.get_demo_data()
+    return jsonify({'status': 'success', 'data': demo_data, 'mode': 'demo'})
+
+
+@app.route('/api/demo/persistence', methods=['GET'])
+def demo_persistence():
+    """Return simulated persistence data for demo/portfolio purposes."""
+    demo_data = persistence_mon.get_demo_data()
+    return jsonify({'status': 'success', 'data': demo_data, 'mode': 'demo'})
+
+
+@app.route('/api/demo/full', methods=['GET'])
+def demo_full_scan():
+    """Return a complete simulated scan for demo/portfolio purposes."""
+    demo_data = {
+        'scan_time': datetime.now().isoformat(),
+        'os': 'windows',
+        'hostname': 'WORKSTATION-01',
+        'processes': process_mon.get_demo_data(),
+        'network': network_mon.get_demo_data(),
+        'filesystem': filesystem_mon.get_demo_data(),
+        'registry': registry_mon.get_demo_data(),
+        'persistence': persistence_mon.get_demo_data()
+    }
+    return jsonify({'status': 'success', 'data': demo_data, 'mode': 'demo'})
+
+
+if __name__ == '__main__':
+    os.makedirs('exports', exist_ok=True)
+    os.makedirs('baselines', exist_ok=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

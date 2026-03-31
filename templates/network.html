@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - Network Connections{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">&#x1F310; Network Connections Analysis</h1>
+    <p class="page-subtitle">Map active connections to owning processes, identify suspicious ports and external connections</p>
+</div>
+
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="runScan('network')">&#x25B6; Scan Network</button>
+        <button class="btn" onclick="loadDemoData('network')">&#x1F4E1; Demo Data</button>
+    </div>
+</div>
+
+<div class="loading-spinner" id="network-loading">
+    <div class="spinner"></div>
+    <p>Scanning network connections...</p>
+</div>
+
+<div id="network-results">
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="net-findings-tab" onclick="switchTab('net-findings-tab')">Findings</button>
+        <button class="tab-btn" data-tab="net-table-tab" onclick="switchTab('net-table-tab')">Connection Table</button>
+    </div>
+
+    <div id="net-findings-tab" class="tab-content active">
+        <div id="network-findings">
+            <div class="empty-state">
+                <div class="empty-icon">&#x1F310;</div>
+                <div class="empty-title">Run a Network Scan</div>
+                <p>Scan will enumerate connections, check for suspicious ports, and flag unusual external connections.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="net-table-tab" class="tab-content">
+        <div id="network-table">
+            <div class="empty-state"><p>Connection table will appear after scanning.</p></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

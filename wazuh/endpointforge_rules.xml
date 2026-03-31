@@ -1,0 +1,353 @@
+<!--
+  EndpointForge Custom Rules for Wazuh
+  ======================================
+  Deployment: Copy to /var/ossec/etc/rules/ on the Wazuh SERVER
+  File: /var/ossec/etc/rules/endpointforge_rules.xml
+
+  Rule ID range: 100100 - 100199 (custom rule space)
+  These rules fire alerts based on EndpointForge findings decoded
+  by endpointforge_decoder.xml.
+
+  Severity mapping:
+    EndpointForge critical → Wazuh level 14
+    EndpointForge high     → Wazuh level 12
+    EndpointForge medium   → Wazuh level 8
+    EndpointForge low      → Wazuh level 4
+    EndpointForge info     → Wazuh level 3
+
+  After deploying, restart the Wazuh manager:
+    sudo systemctl restart wazuh-manager
+-->
+
+<group name="endpointforge,">
+
+  <!-- ════════════════════════════════════════════
+       BASE RULE: Catches any EndpointForge event
+       ════════════════════════════════════════════ -->
+
+  <rule id="100100" level="3">
+    <decoded_as>endpointforge</decoded_as>
+    <description>EndpointForge: Event received</description>
+    <group>endpointforge,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       SCAN SUMMARY
+       ════════════════════════════════════════════ -->
+
+  <rule id="100101" level="3">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.type">scan_complete</field>
+    <description>EndpointForge: Scan completed on $(agent.name)</description>
+    <group>endpointforge,scan_summary,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       SEVERITY-BASED RULES
+       ════════════════════════════════════════════ -->
+
+  <!-- CRITICAL findings → Wazuh level 14 -->
+  <rule id="100110" level="14">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.severity">critical</field>
+    <description>EndpointForge CRITICAL: $(endpointforge.message)</description>
+    <group>endpointforge,attack.execution,</group>
+  </rule>
+
+  <!-- HIGH findings → Wazuh level 12 -->
+  <rule id="100111" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.severity">high</field>
+    <description>EndpointForge HIGH: $(endpointforge.message)</description>
+    <group>endpointforge,</group>
+  </rule>
+
+  <!-- MEDIUM findings → Wazuh level 8 -->
+  <rule id="100112" level="8">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.severity">medium</field>
+    <description>EndpointForge MEDIUM: $(endpointforge.message)</description>
+    <group>endpointforge,</group>
+  </rule>
+
+  <!-- LOW findings → Wazuh level 4 -->
+  <rule id="100113" level="4">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.severity">low</field>
+    <description>EndpointForge LOW: $(endpointforge.message)</description>
+    <group>endpointforge,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       PROCESS EXECUTION RULES
+       ════════════════════════════════════════════ -->
+
+  <!-- Core process masquerading (wrong path) -->
+  <rule id="100120" level="14">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">processes</field>
+    <field name="endpointforge.type">wrong_path</field>
+    <description>EndpointForge: Core process running from wrong path — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1036.005</id>
+    </mitre>
+    <group>endpointforge,process_anomaly,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- Core process wrong parent -->
+  <rule id="100121" level="14">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">processes</field>
+    <field name="endpointforge.type">wrong_parent</field>
+    <description>EndpointForge: Process has unexpected parent — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1036.005</id>
+    </mitre>
+    <group>endpointforge,process_anomaly,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- Excess process instances -->
+  <rule id="100122" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">processes</field>
+    <field name="endpointforge.type">excess_instances</field>
+    <description>EndpointForge: Unexpected process instance count — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1036.005</id>
+    </mitre>
+    <group>endpointforge,process_anomaly,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- Suspicious process detected -->
+  <rule id="100123" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">processes</field>
+    <field name="endpointforge.type">suspicious_process</field>
+    <description>EndpointForge: Suspicious process — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1204.002</id>
+    </mitre>
+    <group>endpointforge,process_anomaly,attack.execution,</group>
+  </rule>
+
+  <!-- Suspicious command line -->
+  <rule id="100124" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">processes</field>
+    <field name="endpointforge.type">suspicious_cmdline</field>
+    <description>EndpointForge: Suspicious command line — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+    <group>endpointforge,process_anomaly,attack.execution,</group>
+  </rule>
+
+  <!-- Process in suspicious path -->
+  <rule id="100125" level="8">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">processes</field>
+    <field name="endpointforge.type">suspicious_path</field>
+    <description>EndpointForge: Process in suspicious path — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1036.005</id>
+    </mitre>
+    <group>endpointforge,process_anomaly,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       NETWORK CONNECTION RULES
+       ════════════════════════════════════════════ -->
+
+  <!-- Suspicious listener (shell/netcat) -->
+  <rule id="100130" level="14">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">network</field>
+    <field name="endpointforge.type">suspicious_listener</field>
+    <description>EndpointForge: High-risk process listening — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1059</id>
+    </mitre>
+    <group>endpointforge,network_anomaly,attack.execution,</group>
+  </rule>
+
+  <!-- Suspicious port connection -->
+  <rule id="100131" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">network</field>
+    <field name="endpointforge.type">suspicious_port</field>
+    <description>EndpointForge: Connection on suspicious port — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1571</id>
+    </mitre>
+    <group>endpointforge,network_anomaly,attack.command_and_control,</group>
+  </rule>
+
+  <!-- Unusual external connection -->
+  <rule id="100132" level="8">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">network</field>
+    <field name="endpointforge.type">unusual_external_connection</field>
+    <description>EndpointForge: Unusual external connection — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1071.001</id>
+    </mitre>
+    <group>endpointforge,network_anomaly,attack.command_and_control,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       FILE SYSTEM INTEGRITY RULES
+       ════════════════════════════════════════════ -->
+
+  <!-- Critical system file modified -->
+  <rule id="100140" level="14">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">filesystem</field>
+    <field name="endpointforge.type">critical_file_modified</field>
+    <description>EndpointForge: Critical file modified — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1112</id>
+    </mitre>
+    <group>endpointforge,fim,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- Critical file missing -->
+  <rule id="100141" level="14">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">filesystem</field>
+    <field name="endpointforge.type">critical_file_missing</field>
+    <description>EndpointForge: Critical file missing — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1070.001</id>
+    </mitre>
+    <group>endpointforge,fim,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- New suspicious file -->
+  <rule id="100142" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">filesystem</field>
+    <field name="endpointforge.type">new_file</field>
+    <description>EndpointForge: New file detected — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1204.002</id>
+    </mitre>
+    <group>endpointforge,fim,attack.execution,</group>
+  </rule>
+
+  <!-- File hash changed -->
+  <rule id="100143" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">filesystem</field>
+    <field name="endpointforge.type">file_modified</field>
+    <description>EndpointForge: File hash changed — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1083</id>
+    </mitre>
+    <group>endpointforge,fim,</group>
+  </rule>
+
+  <!-- File deleted -->
+  <rule id="100144" level="8">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">filesystem</field>
+    <field name="endpointforge.type">file_deleted</field>
+    <description>EndpointForge: File removed — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1070.001</id>
+    </mitre>
+    <group>endpointforge,fim,attack.defense_evasion,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       REGISTRY RULES (Windows)
+       ════════════════════════════════════════════ -->
+
+  <!-- Suspicious registry value -->
+  <rule id="100150" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">registry</field>
+    <field name="endpointforge.type">suspicious_registry_value</field>
+    <description>EndpointForge: Suspicious registry value — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1547.001</id>
+    </mitre>
+    <group>endpointforge,registry,attack.persistence,</group>
+  </rule>
+
+  <!-- ════════════════════════════════════════════
+       PERSISTENCE RULES
+       ════════════════════════════════════════════ -->
+
+  <!-- Suspicious scheduled task -->
+  <rule id="100160" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">persistence</field>
+    <field name="endpointforge.type">suspicious_scheduled_task</field>
+    <description>EndpointForge: Suspicious scheduled task — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1053.005</id>
+    </mitre>
+    <group>endpointforge,persistence,attack.persistence,</group>
+  </rule>
+
+  <!-- Suspicious service -->
+  <rule id="100161" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">persistence</field>
+    <field name="endpointforge.type">suspicious_service</field>
+    <description>EndpointForge: Suspicious service — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1543.003</id>
+    </mitre>
+    <group>endpointforge,persistence,attack.persistence,</group>
+  </rule>
+
+  <!-- Suspicious startup item -->
+  <rule id="100162" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">persistence</field>
+    <field name="endpointforge.type">suspicious_startup_item</field>
+    <description>EndpointForge: Suspicious startup item — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1547.001</id>
+    </mitre>
+    <group>endpointforge,persistence,attack.persistence,</group>
+  </rule>
+
+  <!-- Suspicious cron job -->
+  <rule id="100163" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">persistence</field>
+    <field name="endpointforge.type">suspicious_cron_job</field>
+    <description>EndpointForge: Suspicious cron job — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1053.003</id>
+    </mitre>
+    <group>endpointforge,persistence,attack.persistence,</group>
+  </rule>
+
+  <!-- Suspicious systemd service -->
+  <rule id="100164" level="12">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">persistence</field>
+    <field name="endpointforge.type">suspicious_systemd_service</field>
+    <description>EndpointForge: Suspicious systemd service — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1543.002</id>
+    </mitre>
+    <group>endpointforge,persistence,attack.persistence,</group>
+  </rule>
+
+  <!-- Suspicious shell config -->
+  <rule id="100165" level="8">
+    <if_sid>100100</if_sid>
+    <field name="endpointforge.module">persistence</field>
+    <field name="endpointforge.type">suspicious_shell_config</field>
+    <description>EndpointForge: Suspicious shell config — $(endpointforge.message)</description>
+    <mitre>
+      <id>T1546.004</id>
+    </mitre>
+    <group>endpointforge,persistence,attack.persistence,</group>
+  </rule>
+
+</group>

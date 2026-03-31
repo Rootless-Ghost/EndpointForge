@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - File System Integrity{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">&#x1F4C1; File System Integrity Monitoring</h1>
+    <p class="page-subtitle">Baseline critical directories, detect file creation, modification, and deletion</p>
+</div>
+
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-success" onclick="runFIMBaseline()">&#x1F4BE; Create Baseline</button>
+        <button class="btn btn-primary" onclick="runFIMCheck()">&#x25B6; Check Integrity</button>
+        <button class="btn" onclick="loadDemoData('filesystem')">&#x1F4E1; Demo Data</button>
+    </div>
+</div>
+
+<div class="loading-spinner" id="filesystem-loading">
+    <div class="spinner"></div>
+    <p>Scanning file system...</p>
+</div>
+
+<div id="filesystem-results">
+    <div id="filesystem-changes"></div>
+    <div id="filesystem-findings">
+        <div class="empty-state">
+            <div class="empty-icon">&#x1F4C1;</div>
+            <div class="empty-title">File Integrity Monitoring</div>
+            <p>First create a baseline of known-good file state, then run integrity checks to detect changes.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <span class="card-title">Monitored Directories</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h4 style="color: var(--accent-blue); margin-bottom: 10px;">&#x1F4BB; Windows</h4>
+            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); line-height: 2;">
+                C:\Windows\System32<br>
+                C:\Windows\SysWOW64<br>
+                C:\Program Files<br>
+                C:\Program Files (x86)<br>
+                C:\Users\Public<br>
+                C:\ProgramData
+            </div>
+        </div>
+        <div>
+            <h4 style="color: var(--accent-green); margin-bottom: 10px;">&#x1F427; Linux</h4>
+            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); line-height: 2;">
+                /etc<br>
+                /bin, /sbin<br>
+                /usr/bin, /usr/sbin<br>
+                /usr/local/bin<br>
+                /tmp, /var/tmp<br>
+                /dev/shm
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function runFIMBaseline() {
+    if (isScanning) return;
+    isScanning = true;
+    updateScanStatus('Creating baseline...', true);
+    showLoading('filesystem');
+    try {
+        const result = await apiCall('/api/scan/filesystem', 'POST', { mode: 'baseline' });
+        if (result.status === 'success') {
+            renderResults('filesystem', result.data);
+        }
+    } catch (error) {
+        showError('filesystem', error.message);
+    } finally {
+        isScanning = false;
+        updateScanStatus('Ready', false);
+        hideLoading('filesystem');
+    }
+}
+
+async function runFIMCheck() {
+    if (isScanning) return;
+    isScanning = true;
+    updateScanStatus('Checking integrity...', true);
+    showLoading('filesystem');
+    try {
+        const result = await apiCall('/api/scan/filesystem', 'POST', { mode: 'check' });
+        if (result.status === 'success') {
+            renderResults('filesystem', result.data);
+        }
+    } catch (error) {
+        showError('filesystem', error.message);
+    } finally {
+        isScanning = false;
+        updateScanStatus('Ready', false);
+        hideLoading('filesystem');
+    }
+}
+</script>
+{% endblock %}

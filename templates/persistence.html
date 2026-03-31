@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - Persistence Detection{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">&#x1F512; Persistence Mechanism Detection</h1>
+    <p class="page-subtitle">Cross-platform detection of autoruns, scheduled tasks, cron jobs, services, and startup items</p>
+</div>
+
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="runScan('persistence')">&#x25B6; Scan Persistence</button>
+        <button class="btn" onclick="loadDemoData('persistence')">&#x1F4E1; Demo Data</button>
+    </div>
+</div>
+
+<div class="loading-spinner" id="persistence-loading">
+    <div class="spinner"></div>
+    <p>Scanning persistence mechanisms...</p>
+</div>
+
+<div id="persistence-results">
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="persist-findings-tab" onclick="switchTab('persist-findings-tab')">Findings</button>
+        <button class="tab-btn" data-tab="persist-all-tab" onclick="switchTab('persist-all-tab')">All Mechanisms</button>
+    </div>
+
+    <div id="persist-findings-tab" class="tab-content active">
+        <div id="persistence-findings">
+            <div class="empty-state">
+                <div class="empty-icon">&#x1F512;</div>
+                <div class="empty-title">Run a Persistence Scan</div>
+                <p>Scans for Windows autoruns, scheduled tasks, services, startup folders, Linux cron jobs, systemd services, shell configs, and init scripts.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="persist-all-tab" class="tab-content">
+        <div id="persistence-mechanisms">
+            <div class="empty-state"><p>All detected mechanisms will appear after scanning.</p></div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <span class="card-title">Persistence Locations Checked</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h4 style="color: var(--accent-blue); margin-bottom: 12px;">&#x1F4BB; Windows</h4>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 2;">
+                <span class="mitre-tag">T1547.001</span> Registry Run Keys<br>
+                <span class="mitre-tag">T1053.005</span> Scheduled Tasks<br>
+                <span class="mitre-tag">T1543.003</span> Windows Services<br>
+                <span class="mitre-tag">T1547.001</span> Startup Folders<br>
+            </div>
+        </div>
+        <div>
+            <h4 style="color: var(--accent-green); margin-bottom: 12px;">&#x1F427; Linux</h4>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 2;">
+                <span class="mitre-tag">T1053.003</span> Cron Jobs (system + user)<br>
+                <span class="mitre-tag">T1543.002</span> Systemd Services<br>
+                <span class="mitre-tag">T1546.004</span> Shell Configs (.bashrc, .profile)<br>
+                <span class="mitre-tag">T1037.004</span> Init Scripts (rc.local)<br>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

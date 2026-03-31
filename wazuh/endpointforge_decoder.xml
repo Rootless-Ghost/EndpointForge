@@ -1,0 +1,28 @@
+<!--
+  EndpointForge Custom Decoder for Wazuh
+  =======================================
+  Deployment: Copy to /var/ossec/etc/decoders/ on the Wazuh SERVER
+  File: /var/ossec/etc/decoders/endpointforge_decoder.xml
+
+  This decoder parses EndpointForge's NDJSON log entries and extracts
+  fields for use in custom rules. Each log line is a single JSON object
+  with nested fields under the 'endpointforge' key.
+
+  After deploying, restart the Wazuh manager:
+    sudo systemctl restart wazuh-manager
+
+  Test with:
+    sudo /var/ossec/bin/wazuh-logtest
+    (paste a sample JSON log line from EndpointForge)
+-->
+
+<!-- Parent decoder: matches any log line from EndpointForge -->
+<decoder name="endpointforge">
+  <prematch>\"source\":\"endpointforge\"</prematch>
+</decoder>
+
+<!-- Child decoder: extracts core fields from the JSON structure -->
+<decoder name="endpointforge-fields">
+  <parent>endpointforge</parent>
+  <plugin_decoder>JSON_Decoder</plugin_decoder>
+</decoder>

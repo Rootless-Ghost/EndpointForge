@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - Process Execution{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">&#x2699; Process Execution Analysis</h1>
+    <p class="page-subtitle">Monitor running processes, parent-child hierarchy, and Windows core process baselines</p>
+</div>
+
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="runScan('processes')">&#x25B6; Scan Processes</button>
+        <button class="btn" onclick="loadDemoData('processes')">&#x1F4E1; Demo Data</button>
+    </div>
+</div>
+
+<div class="loading-spinner" id="processes-loading">
+    <div class="spinner"></div>
+    <p>Scanning running processes...</p>
+</div>
+
+<div id="processes-results">
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="findings-tab" onclick="switchTab('findings-tab')">Findings</button>
+        <button class="tab-btn" data-tab="table-tab" onclick="switchTab('table-tab')">Process Table</button>
+    </div>
+
+    <div id="findings-tab" class="tab-content active">
+        <div id="processes-findings">
+            <div class="empty-state">
+                <div class="empty-icon">&#x2699;</div>
+                <div class="empty-title">Run a Process Scan</div>
+                <p>Scan will enumerate processes, check parent-child relationships, and validate Windows core process baselines.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="table-tab" class="tab-content">
+        <div id="process-table">
+            <div class="empty-state">
+                <p>Process table will appear after scanning.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <span class="card-title">Windows Core Process Baselines</span>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Process</th>
+                <th>Expected Parent</th>
+                <th>Expected Path</th>
+                <th>Instances</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="color: var(--accent-cyan);">System</td>
+                <td>None (PID 0)</td>
+                <td>N/A (kernel)</td>
+                <td>1 (PID 4)</td>
+                <td>Always PID 4</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">smss.exe</td>
+                <td>System (PID 4)</td>
+                <td>C:\Windows\System32\smss.exe</td>
+                <td>1</td>
+                <td>Session Manager</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">csrss.exe</td>
+                <td>smss.exe (orphaned)</td>
+                <td>C:\Windows\System32\csrss.exe</td>
+                <td>2</td>
+                <td>Session 0 + Session 1</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">wininit.exe</td>
+                <td>smss.exe (orphaned)</td>
+                <td>C:\Windows\System32\wininit.exe</td>
+                <td>1</td>
+                <td>Session 0 only</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">services.exe</td>
+                <td>wininit.exe</td>
+                <td>C:\Windows\System32\services.exe</td>
+                <td>1</td>
+                <td>Service Control Manager</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">lsass.exe</td>
+                <td>wininit.exe</td>
+                <td>C:\Windows\System32\lsass.exe</td>
+                <td>1</td>
+                <td style="color: var(--accent-orange);">Credential storage — prime target</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">svchost.exe</td>
+                <td>services.exe</td>
+                <td>C:\Windows\System32\svchost.exe</td>
+                <td>Multiple</td>
+                <td>Must have -k flag</td>
+            </tr>
+            <tr>
+                <td style="color: var(--accent-cyan);">explorer.exe</td>
+                <td>userinit.exe (exits)</td>
+                <td>C:\Windows\explorer.exe</td>
+                <td>1 per session</td>
+                <td>User shell</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

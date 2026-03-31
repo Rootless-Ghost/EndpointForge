@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EndpointForge{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <div class="logo-icon">EF</div>
+                    <div>
+                        <div class="logo-text">EndpointForge</div>
+                        <div class="logo-version">v1.0.0</div>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a href="/" class="nav-link">
+                        <span class="nav-icon">&#x2302;</span>
+                        Dashboard
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Monitoring Pillars</div>
+                    <a href="/processes" class="nav-link">
+                        <span class="nav-icon">&#x2699;</span>
+                        Process Execution
+                        <span class="nav-badge cross-platform">W+L</span>
+                    </a>
+                    <a href="/network" class="nav-link">
+                        <span class="nav-icon">&#x1F310;</span>
+                        Network Connections
+                        <span class="nav-badge cross-platform">W+L</span>
+                    </a>
+                    <a href="/filesystem" class="nav-link">
+                        <span class="nav-icon">&#x1F4C1;</span>
+                        File System Integrity
+                        <span class="nav-badge cross-platform">W+L</span>
+                    </a>
+                    <a href="/registry" class="nav-link">
+                        <span class="nav-icon">&#x1F5C3;</span>
+                        Registry Modifications
+                        <span class="nav-badge windows">WIN</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Detection</div>
+                    <a href="/persistence" class="nav-link">
+                        <span class="nav-icon">&#x1F512;</span>
+                        Persistence Detection
+                        <span class="nav-badge cross-platform">W+L</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Reporting</div>
+                    <a href="/reports" class="nav-link">
+                        <span class="nav-icon">&#x1F4CB;</span>
+                        Reports &amp; Export
+                    </a>
+                </div>
+
+                <div class="nav-section" style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                    <div class="nav-section-title">System</div>
+                    <div style="padding: 8px 12px; font-size: 12px; color: var(--text-muted);">
+                        OS: <span class="os-badge {{ os_type }}">{{ os_type | upper }}</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="demo-banner" style="display: none;">
+                <span class="demo-icon">&#x1F4E1;</span>
+                <span><strong>Demo Mode</strong> — Viewing simulated endpoint data for portfolio demonstration.</span>
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

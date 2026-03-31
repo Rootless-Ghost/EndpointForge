@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Endpoint Security Dashboard</h1>
+    <p class="page-subtitle">Cross-platform endpoint security monitoring with MITRE ATT&CK mapping</p>
+</div>
+
+<!-- Scan Controls -->
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="runFullScan()">
+            &#x25B6; Run Full Scan
+        </button>
+        <button class="btn" onclick="loadDemoData('full')">
+            &#x1F4E1; Load Demo Data
+        </button>
+    </div>
+</div>
+
+<!-- Severity Stats -->
+<div class="stats-grid">
+    <div class="stat-card total">
+        <div class="stat-value" id="total-findings">0</div>
+        <div class="stat-label">Total Findings</div>
+    </div>
+    <div class="stat-card critical">
+        <div class="stat-value" id="critical-count">0</div>
+        <div class="stat-label">Critical</div>
+    </div>
+    <div class="stat-card high">
+        <div class="stat-value" id="high-count">0</div>
+        <div class="stat-label">High</div>
+    </div>
+    <div class="stat-card medium">
+        <div class="stat-value" id="medium-count">0</div>
+        <div class="stat-label">Medium</div>
+    </div>
+    <div class="stat-card low">
+        <div class="stat-value" id="low-count">0</div>
+        <div class="stat-label">Low</div>
+    </div>
+</div>
+
+<!-- Module Summary -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Module Summary</span>
+    </div>
+    <div id="module-summary">
+        <div class="empty-state">
+            <div class="empty-icon">&#x1F50D;</div>
+            <div class="empty-title">No Scan Data</div>
+            <p>Run a full scan or load demo data to see the endpoint security overview.</p>
+        </div>
+    </div>
+</div>
+
+<!-- All Findings -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">All Findings</span>
+    </div>
+    <div id="dashboard-findings">
+        <div class="empty-state">
+            <div class="empty-icon">&#x2713;</div>
+            <div class="empty-title">No Findings Yet</div>
+            <p>Findings will appear here after running a scan.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

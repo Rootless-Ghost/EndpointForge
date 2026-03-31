@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}EndpointForge - Registry Modifications{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">&#x1F5C3; Registry Modifications Analysis</h1>
+    <p class="page-subtitle">Monitor persistence keys, detect suspicious registry modifications (Windows only)</p>
+</div>
+
+<div class="scan-controls">
+    <div class="scan-status">
+        <div class="status-dot" id="scan-status-dot"></div>
+        <span id="scan-status-text">Ready</span>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="runScan('registry')">&#x25B6; Scan Registry</button>
+        <button class="btn" onclick="loadDemoData('registry')">&#x1F4E1; Demo Data</button>
+    </div>
+</div>
+
+<div class="loading-spinner" id="registry-loading">
+    <div class="spinner"></div>
+    <p>Scanning registry keys...</p>
+</div>
+
+<div id="registry-results">
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="reg-findings-tab" onclick="switchTab('reg-findings-tab')">Findings</button>
+        <button class="tab-btn" data-tab="reg-entries-tab" onclick="switchTab('reg-entries-tab')">Registry Entries</button>
+    </div>
+
+    <div id="reg-findings-tab" class="tab-content active">
+        <div id="registry-findings">
+            <div class="empty-state">
+                <div class="empty-icon">&#x1F5C3;</div>
+                <div class="empty-title">Run a Registry Scan</div>
+                <p>Scans known persistence keys for suspicious values including encoded commands, unusual paths, and IFEO hijacking.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="reg-entries-tab" class="tab-content">
+        <div id="registry-entries">
+            <div class="empty-state"><p>Registry entries will appear after scanning.</p></div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <span class="card-title">Monitored Registry Keys</span>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Registry Key</th>
+                <th>Purpose</th>
+                <th>ATT&CK</th>
+                <th>Risk</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>HKLM\...\CurrentVersion\Run</td>
+                <td>Startup programs (all users)</td>
+                <td><span class="mitre-tag">T1547.001</span></td>
+                <td><span class="severity-badge high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>HKCU\...\CurrentVersion\Run</td>
+                <td>Startup programs (current user)</td>
+                <td><span class="mitre-tag">T1547.001</span></td>
+                <td><span class="severity-badge high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>HKLM\...\Winlogon</td>
+                <td>Shell and Userinit at logon</td>
+                <td><span class="mitre-tag">T1547.001</span></td>
+                <td><span class="severity-badge critical">CRITICAL</span></td>
+            </tr>
+            <tr>
+                <td>HKLM\...\Services</td>
+                <td>Windows service registration</td>
+                <td><span class="mitre-tag">T1543.003</span></td>
+                <td><span class="severity-badge high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>HKLM\...\Image File Execution Options</td>
+                <td>IFEO debugger redirection</td>
+                <td><span class="mitre-tag">T1546.012</span></td>
+                <td><span class="severity-badge critical">CRITICAL</span></td>
+            </tr>
+            <tr>
+                <td>HKLM\...\Classes\CLSID</td>
+                <td>COM object hijacking</td>
+                <td><span class="mitre-tag">T1546.015</span></td>
+                <td><span class="severity-badge high">HIGH</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
