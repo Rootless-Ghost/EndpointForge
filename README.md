@@ -193,6 +193,6 @@ MIT License
 
 <div align="center">
 
-**Built by [Rootless-Ghost](https://github.com/Rootless-Ghost)** — [@Rootless_Ghost](https://twitter.com/Rootless_Ghost)
+Built by [Rootless-Ghost](https://github.com/Rootless-Ghost)
 
 </div>
