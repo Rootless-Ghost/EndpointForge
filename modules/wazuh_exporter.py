@@ -23,6 +23,9 @@ import json
 import platform
 import socket
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Default log paths by OS
@@ -205,7 +208,12 @@ class WazuhExporter:
                     pass  # Truncate
             return {'status': 'success', 'message': f'Log cleared: {self.log_path}'}
         except Exception as e:
-            return {'status': 'error', 'message': str(e)}
+            # Log the detailed exception server-side, but return a generic message to the caller
+            logger.exception("Failed to clear Wazuh export log")
+            return {
+                'status': 'error',
+                'message': 'Failed to clear Wazuh export log.'
+            }
 
     def get_status(self):
         """Check exporter status and log file info."""
