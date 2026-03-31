@@ -241,7 +241,9 @@ def api_wazuh_setup():
         result = wazuh_exp.setup()
         return jsonify({'status': result['status'], 'data': result})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during Wazuh setup")
+        return jsonify({'status': 'error',
+                        'message': 'A Wazuh-related internal error has occurred.'}), 500
 
 
 @app.route('/api/wazuh/export', methods=['POST'])
@@ -252,7 +254,9 @@ def api_wazuh_export():
         result = wazuh_exp.export_findings(scan_data)
         return jsonify({'status': 'success', 'data': result})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during Wazuh export of findings")
+        return jsonify({'status': 'error',
+                        'message': 'A Wazuh-related internal error has occurred.'}), 500
 
 
 @app.route('/api/wazuh/status', methods=['GET'])
@@ -262,7 +266,9 @@ def api_wazuh_status():
         status = wazuh_exp.get_status()
         return jsonify({'status': 'success', 'data': status})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error retrieving Wazuh status")
+        return jsonify({'status': 'error',
+                        'message': 'A Wazuh-related internal error has occurred.'}), 500
 
 
 @app.route('/api/wazuh/clear', methods=['POST'])
@@ -272,7 +278,9 @@ def api_wazuh_clear():
         result = wazuh_exp.clear_log()
         return jsonify({'status': result['status'], 'data': result})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error clearing Wazuh export log")
+        return jsonify({'status': 'error',
+                        'message': 'A Wazuh-related internal error has occurred.'}), 500
 
 
 @app.route('/api/wazuh/demo', methods=['GET'])
@@ -282,7 +290,9 @@ def api_wazuh_demo():
         demo = wazuh_exp.get_demo_export()
         return jsonify({'status': 'success', 'data': demo})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error generating Wazuh demo export")
+        return jsonify({'status': 'error',
+                        'message': 'A Wazuh-related internal error has occurred.'}), 500
 
 
 # ──────────────────────────────────────────────
