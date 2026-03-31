@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 import os
 import platform
+import logging
 
 # Import endpoint modules
 from modules.process_monitor import ProcessMonitor
@@ -21,6 +22,8 @@ from modules.registry_monitor import RegistryMonitor
 from modules.persistence_monitor import PersistenceMonitor
 from modules.report_generator import ReportGenerator
 from modules.wazuh_exporter import WazuhExporter
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -103,7 +106,8 @@ def api_system_info():
         }
         return jsonify({'status': 'success', 'data': info})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error while gathering system information")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/scan/processes', methods=['POST'])
@@ -113,7 +117,8 @@ def api_scan_processes():
         results = process_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during process scan")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/scan/network', methods=['POST'])
@@ -123,7 +128,8 @@ def api_scan_network():
         results = network_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during network scan")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/scan/filesystem', methods=['POST'])
@@ -135,7 +141,8 @@ def api_scan_filesystem():
         results = filesystem_mon.scan(mode=mode, custom_paths=paths)
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during filesystem scan")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/scan/registry', methods=['POST'])
@@ -151,7 +158,8 @@ def api_scan_registry():
         results = registry_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during registry scan")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/scan/persistence', methods=['POST'])
@@ -161,7 +169,8 @@ def api_scan_persistence():
         results = persistence_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during persistence scan")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/scan/full', methods=['POST'])
@@ -182,7 +191,8 @@ def api_full_scan():
 
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logger.exception("Error during full scan")
+        return jsonify({'status': 'error', 'message': 'An internal error has occurred.'}), 500
 
 
 @app.route('/api/report/generate', methods=['POST'])
