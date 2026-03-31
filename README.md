@@ -1,5 +1,6 @@
 # EndpointForge
 
+<div align="center">
 **Cross-Platform Endpoint Security Monitor**
 
 A lightweight host-based intrusion detection and endpoint triage tool with MITRE ATT&CK mapping for Windows and Linux systems. Built with Python and Flask.
@@ -8,7 +9,7 @@ A lightweight host-based intrusion detection and endpoint triage tool with MITRE
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green?style=flat-square&logo=flask)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE_ATT%26CK-Mapped-purple?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-cyan?style=flat-square)
-
+ </div>
 ---
 
 ## Overview
