@@ -8,6 +8,11 @@
   fields for use in custom rules. Each log line is a single JSON object
   with nested fields under the 'endpointforge' key.
 
+  NOTE: Decoder files must NOT use a <decoder_list> root wrapper element.
+  Wazuh expects bare <decoder> elements at the top level of the file.
+  A <decoder_list> wrapper will cause the manager to silently ignore all
+  decoders in the file.
+
   After deploying, restart the Wazuh manager:
     sudo systemctl restart wazuh-manager
 
@@ -17,8 +22,10 @@
 -->
 
 <!-- Parent decoder: matches any log line from EndpointForge -->
+<!-- prematch uses literal quotes (no backslash escaping) to match  -->
+<!-- compact JSON output from wazuh_exporter.py separators=(',',':') -->
 <decoder name="endpointforge">
-  <prematch>\"source\":\"endpointforge\"</prematch>
+  <prematch>"source":"endpointforge"</prematch>
 </decoder>
 
 <!-- Child decoder: extracts core fields from the JSON structure -->
