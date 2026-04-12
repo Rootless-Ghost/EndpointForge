@@ -33,6 +33,22 @@ EndpointForge monitors endpoints across four core security pillars, detecting su
 - **Severity Scoring** — Critical, High, Medium, Low, Info
 - **Report Generation** — Markdown and JSON export
 
+---
+
+## SOC Use Case
+
+**Threat hunting and live triage on an endpoint where you have local or agent access.**
+
+1. **Baseline first** — run the filesystem module in `baseline` mode to SHA-256 hash the paths you care about. The baseline is saved to `baselines/fim_baseline_{os}.json`.
+2. **Full scan** — `POST /api/scan/full` runs all five modules in one pass and returns a unified findings dict. On Windows, registry is included automatically; on Linux it is skipped with `os_supported: false`.
+3. **Triage findings** — severity levels are `critical / high / medium / low / info`. Each finding carries a MITRE technique ID and name so you can pivot directly to ATT&CK documentation.
+4. **Export to Wazuh** — `POST /api/wazuh/export` writes NDJSON to the log file. The Wazuh agent picks it up, the decoder fires, and rules generate alerts in the Wazuh dashboard — no manual log shipping.
+5. **Generate a report** — produce a Markdown or JSON report from scan results, download it from `exports/`, and reference it in an IR workflow or attach it to a SIREN incident.
+
+**Registry hunt workflow (Windows only):** `POST /api/scan/registry` checks 11 high-value keys against 15 suspicious value patterns — powershell, cmd /c, mshta, regsvr32, rundll32, -enc, -nop, downloadstring, invoke-expression, base64, \temp\\, \appdata\\, \public\\, wscript, cscript. Findings map to T1547.001 and T1112.
+
+---
+
 ## Features
 
 ### Process Execution Analysis
@@ -68,6 +84,185 @@ EndpointForge monitors endpoints across four core security pillars, detecting su
 - JSON export for SIEM ingestion and automation pipelines
 - Severity-sorted findings across all modules
 
+---
+
+## Architecture
+
+### Application startup (`app.py`)
+
+```
+CURRENT_OS = platform.system().lower()   # 'windows' or 'linux', detected once at startup
+
+process_mon     = ProcessMonitor()
+network_mon     = NetworkMonitor()
+filesystem_mon  = FileSystemMonitor()
+registry_mon    = RegistryMonitor()
+persistence_mon = PersistenceMonitor()
+report_gen      = ReportGenerator()
+wazuh_exp       = WazuhExporter()
+
+os.makedirs('exports', exist_ok=True)
+os.makedirs('baselines', exist_ok=True)
+app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+```
+
+`debug_mode` reads `FLASK_DEBUG` from the environment (values `1`, `true`, or `yes` enable it).
+
+### Flask routes
+
+**Page routes** — render templates that POST to the API layer via JavaScript:
+
+| Route | Function | Template |
+|-------|----------|----------|
+| `GET /` | `dashboard()` | `dashboard.html` |
+| `GET /processes` | `processes()` | `processes.html` |
+| `GET /network` | `network()` | `network.html` |
+| `GET /filesystem` | `filesystem()` | `filesystem.html` |
+| `GET /registry` | `registry()` | `registry.html` |
+| `GET /persistence` | `persistence()` | `persistence.html` |
+| `GET /reports` | `reports()` | `reports.html` |
+
+**Scan and report API routes:**
+
+| Route | Method | Function |
+|-------|--------|----------|
+| `/api/system-info` | GET | `api_system_info()` |
+| `/api/scan/processes` | POST | `api_scan_processes()` |
+| `/api/scan/network` | POST | `api_scan_network()` |
+| `/api/scan/filesystem` | POST | `api_scan_filesystem()` — accepts `{"mode": "baseline"\|"check", "paths": [...]}` |
+| `/api/scan/registry` | POST | `api_scan_registry()` — returns `os_supported: false` on non-Windows |
+| `/api/scan/persistence` | POST | `api_scan_persistence()` |
+| `/api/scan/full` | POST | `api_full_scan()` — all modules; registry only on Windows |
+| `/api/report/generate` | POST | `api_generate_report()` — accepts `{"scan_data": ..., "format": "markdown"\|"json"}` |
+| `/api/report/export` | POST | `api_export_report()` — saves to `exports/EndpointForge_Report_{timestamp}.{ext}` |
+
+**Wazuh integration routes:**
+
+| Route | Method | Function |
+|-------|--------|----------|
+| `/api/wazuh/setup` | POST | `api_wazuh_setup()` — creates log directory, returns ossec.conf snippet |
+| `/api/wazuh/export` | POST | `api_wazuh_export()` — writes NDJSON from `scan_data` |
+| `/api/wazuh/status` | GET | `api_wazuh_status()` — log path, file size, entry count |
+| `/api/wazuh/clear` | POST | `api_wazuh_clear()` — truncates log file |
+| `/api/wazuh/demo` | GET | `api_wazuh_demo()` — preview NDJSON format without writing to disk |
+
+**Demo routes** — no live system access, always safe:
+
+| Route | Method | Function |
+|-------|--------|----------|
+| `/api/demo/processes` | GET | `demo_processes()` |
+| `/api/demo/network` | GET | `demo_network()` |
+| `/api/demo/filesystem` | GET | `demo_filesystem()` |
+| `/api/demo/registry` | GET | `demo_registry()` |
+| `/api/demo/persistence` | GET | `demo_persistence()` |
+| `/api/demo/full` | GET | `demo_full_scan()` — simulates a complete Windows scan |
+
+### Module internals
+
+**ProcessMonitor** (`modules/process_monitor.py`)
+
+`scan()` → `EndpointCollector().collect_processes()` → four analysis passes:
+
+- `_check_windows_core_processes()` — validates 9 core processes against `WINDOWS_CORE_PROCESSES` baselines
+- `_check_svchost_parents()` — flags svchost.exe not parented by services.exe; flags missing `-k` argument → T1036.005
+- `_check_suspicious_processes()` — name matching against `SUSPICIOUS_PROCESS_NAMES` → T1204.002
+- `_check_suspicious_paths()` — path matching against `SUSPICIOUS_PATHS` → T1036.005
+- `_check_suspicious_cmdline()` — 12 cmdline patterns → T1059.001, T1059.003, T1112, T1053.005
+
+Returns: `{processes, findings, process_count, findings_count, scan_time, summary}`
+
+**NetworkMonitor** (`modules/network_monitor.py`)
+
+`scan()` → `EndpointCollector().collect_network_connections()` → three checks:
+
+- `_check_suspicious_ports()` — 11-entry `SUSPICIOUS_PORTS` dict → T1571
+- `_check_unusual_external()` — unexpected process with external established connection → T1071.001
+- `_check_listening_services()` — high-risk listeners: cmd.exe, powershell.exe, bash, sh, nc, ncat, netcat → T1059.001, T1059.004
+
+Returns: `{connections, findings, connection_count, established_count, listening_count, findings_count, scan_time, summary}`
+
+**FileSystemMonitor** (`modules/filesystem_monitor.py`)
+
+`scan(mode='baseline', custom_paths=None)`
+
+- **baseline mode** — `_create_baseline(paths)`: SHA-256 hashes files up to `max_depth=2`, `max_files=500` per directory; saves to `baselines/fim_baseline_{os}.json`
+- **check mode** — `_check_integrity(paths)`: compares current hashes vs baseline; new files → T1204.002, modified → T1083/T1112, deleted → T1070.001; modifications to `CRITICAL_FILES` → T1112/T1070.001
+
+`CRITICAL_FILES` — Windows: hosts, SAM, SYSTEM, SECURITY; Linux: passwd, shadow, sudoers, sshd_config, crontab, hosts, resolv.conf
+
+`SUSPICIOUS_EXTENSIONS`: 16 entries (.exe, .dll, .bat, .ps1, .vbs, .js, .hta, .scr, .pif, .com, .cmd, .msi, .reg, .inf, .lnk, .so)
+
+**RegistryMonitor** (`modules/registry_monitor.py`) — Windows only
+
+`scan()` calls `EndpointCollector.collect_windows_registry_values(reg_path)` for 11 keys: HKLM/HKCU Run, RunOnce, Winlogon, Services, Shell Folders, CLSID, IFEO, Policies Explorer Run, User Shell Folders. 15 `SUSPICIOUS_VALUE_PATTERNS` checked per value: powershell, cmd /c, wscript, cscript, mshta, regsvr32, rundll32, \temp\\, \appdata\\, \public\\, -enc, -nop, downloadstring, invoke-expression, base64.
+
+Returns: `{os_supported, entries, entries_count, findings, findings_count, keys_scanned, scan_time, summary}`
+
+**PersistenceMonitor** (`modules/persistence_monitor.py`) — cross-platform
+
+`scan()` branches on OS:
+
+| Platform | Method | MITRE |
+|----------|--------|-------|
+| Windows | `_analyze_scheduled_tasks()` | T1053.005 |
+| Windows | `_analyze_services()` | T1543.003 |
+| Windows | `_analyze_startup_items()` | T1547.001 |
+| Linux | `_analyze_cron_jobs()` | T1053.003 |
+| Linux | `_analyze_systemd_services()` | T1543.002 |
+| Linux | `_analyze_shell_configs()` | T1546.004 |
+| Linux | `_scan_linux_init_scripts()` — checks `/etc/rc.local` | T1037.004 |
+
+`_is_suspicious_value()` checks 20 indicator strings across all findings.
+
+**EndpointCollector** (`modules/collector.py`) — psutil primary, subprocess fallback
+
+| Method | Primary | Fallback |
+|--------|---------|----------|
+| `collect_processes()` | psutil | WMIC / tasklist (Windows); ps auxww + /proc/PID/status (Linux) |
+| `collect_network_connections()` | psutil | netstat -ano (Windows); ss -tulnp (Linux) |
+| `collect_windows_registry_values(key_path)` | winreg | reg query |
+| `collect_linux_cron_jobs()` | /etc/crontab, /etc/cron.d/, crontab -l, /var/spool/cron/crontabs/ | — |
+| `collect_linux_systemd_services()` | systemctl list-unit-files | — |
+| `collect_linux_shell_configs()` | 6 shell config files | — |
+
+**ReportGenerator** (`modules/report_generator.py`)
+
+`generate(scan_data, report_format='markdown')` → two formats:
+
+- **Markdown** — executive summary (severity table), per-module sections, MITRE ATT&CK technique table, recommendations
+- **JSON** — `{report_metadata, summary: {total_findings, severity_counts}, findings (sorted by severity: critical → high → medium → low → info), mitre_techniques, raw_data}`
+
+**WazuhExporter** (`modules/wazuh_exporter.py`)
+
+`WazuhExporter(log_path=None)` — default paths: Windows `C:\EndpointForge\logs\endpointforge.json`, Linux `/var/log/endpointforge/endpointforge.json`
+
+NDJSON entry structure:
+
+```json
+{
+  "timestamp": "2025-01-01T00:00:00.000+0000",
+  "endpointforge": {
+    "module": "processes",
+    "type": "suspicious_process",
+    "severity": "high",
+    "message": "...",
+    "details": "...",
+    "process": "powershell.exe",
+    "pid": 1234,
+    "mitre": { "id": "T1059.001", "technique": "PowerShell" },
+    "registry_key": "",
+    "value_name": ""
+  },
+  "agent": { "name": "HOSTNAME", "ip": "192.168.x.x" },
+  "source": "endpointforge",
+  "version": "1.0.0"
+}
+```
+
+`export_findings(scan_data)` iterates `['processes', 'network', 'filesystem', 'registry', 'persistence']` and appends a scan summary entry as the final line. `export_single_finding(finding, module)` exports a single finding immediately for real-time alerting.
+
+---
+
 ## Demo Mode
 
 EndpointForge includes a **demo mode** with realistic simulated endpoint data for portfolio demonstrations. Demo data includes a simulated Windows compromise scenario with:
@@ -80,6 +275,8 @@ EndpointForge includes a **demo mode** with realistic simulated endpoint data fo
 - IFEO Sticky Keys backdoor
 - Malicious scheduled tasks and cron jobs
 - Persistence via registry run keys and startup folders
+
+---
 
 ## Installation
 
@@ -98,6 +295,50 @@ Navigate to `http://localhost:5000` in your browser.
 - Flask 3.0+
 - psutil 5.9+ (for live scanning)
 
+---
+
+## Quick Start
+
+```bash
+# Start the web UI
+python app.py
+# → http://0.0.0.0:5000
+
+# Enable debug mode
+FLASK_DEBUG=1 python app.py
+```
+
+**First-run workflow:**
+
+1. Open `http://localhost:5000`
+2. Click **Run Full Scan** — processes, network, filesystem (check mode), and persistence run immediately; registry is added automatically on Windows
+3. Review findings by severity on the dashboard or drill into individual module pages
+4. Open **Reports** → Generate Markdown or JSON → Export `.md` / `.json` to `exports/`
+
+**FIM baseline setup (API):**
+
+```
+POST /api/scan/filesystem
+{"mode": "baseline", "paths": []}
+```
+
+Then run integrity checks against the saved baseline:
+
+```
+POST /api/scan/filesystem
+{"mode": "check", "paths": []}
+```
+
+**Demo mode (no live system access required):**
+
+```
+GET /api/demo/full
+```
+
+Returns a complete simulated Windows scan — 12 processes (9 legitimate + 3 suspicious), network connections, filesystem changes, registry entries, and persistence mechanisms.
+
+---
+
 ## Usage
 
 ### Live Scanning
@@ -108,6 +349,8 @@ Click **"Load Demo Data"** on any page to view simulated scan results without ru
 
 ### Report Export
 After running a scan (live or demo), navigate to **Reports & Export** to generate Markdown or JSON reports.
+
+---
 
 ## Project Structure
 
@@ -143,6 +386,8 @@ EndpointForge/
     └── endpointforge_rules.xml     # Custom rules (IDs 100200–100265) with MITRE tags
 ```
 
+---
+
 ## MITRE ATT&CK Coverage
 
 | Tactic | Techniques |
@@ -152,6 +397,139 @@ EndpointForge/
 | **Defense Evasion** | T1036.005, T1070.001, T1070.002, T1112 |
 | **Discovery** | T1057, T1049, T1083 |
 | **Command and Control** | T1071.001, T1571 |
+
+### Technique detail by module
+
+**Persistence (8 techniques)**
+
+| Technique | Name | Module |
+|-----------|------|--------|
+| T1037.004 | Boot or Logon Initialization Scripts: RC Scripts | Persistence — `_scan_linux_init_scripts()` (`/etc/rc.local`) |
+| T1053.003 | Scheduled Task/Job: Cron | Persistence — `_analyze_cron_jobs()` |
+| T1053.005 | Scheduled Task/Job: Scheduled Task | Persistence — `_analyze_scheduled_tasks()`, Process cmdline |
+| T1078 | Valid Accounts | Persistence |
+| T1543.002 | Create or Modify System Process: Systemd Service | Persistence — `_analyze_systemd_services()` |
+| T1543.003 | Create or Modify System Process: Windows Service | Persistence — `_analyze_services()` |
+| T1546.004 | Event Triggered Execution: Unix Shell Configuration Modification | Persistence — `_analyze_shell_configs()` |
+| T1547.001 | Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder | Persistence — `_analyze_startup_items()` |
+
+**Execution (4 techniques)**
+
+| Technique | Name | Module |
+|-----------|------|--------|
+| T1059.001 | Command and Scripting Interpreter: PowerShell | Process — `_check_suspicious_cmdline()`, Network — `_check_listening_services()` |
+| T1059.003 | Command and Scripting Interpreter: Windows Command Shell | Process — `_check_suspicious_cmdline()` |
+| T1059.004 | Command and Scripting Interpreter: Unix Shell | Network — `_check_listening_services()` |
+| T1204.002 | User Execution: Malicious File | Process — `_check_suspicious_processes()`, Filesystem — new files |
+
+**Defense Evasion (4 techniques)**
+
+| Technique | Name | Module |
+|-----------|------|--------|
+| T1036.005 | Masquerading: Match Legitimate Name or Location | Process — `_check_svchost_parents()`, `_check_suspicious_paths()` |
+| T1070.001 | Indicator Removal: Clear Windows Event Logs | Filesystem — `_check_integrity()` deleted critical files |
+| T1083 | File and Directory Discovery | Filesystem — `_check_integrity()` modified files |
+| T1112 | Modify Registry | Process — `_check_suspicious_cmdline()`, Filesystem — modified critical files |
+
+**Discovery (3 techniques)**
+
+| Technique | Name | Module |
+|-----------|------|--------|
+| T1049 | System Network Connections Discovery | Network — `_check_unusual_external()` |
+| T1057 | Process Discovery | Process — `scan()` |
+| T1083 | File and Directory Discovery | Filesystem — `scan()` |
+
+**Command and Control (2 techniques)**
+
+| Technique | Name | Module |
+|-----------|------|--------|
+| T1071.001 | Application Layer Protocol: Web Protocols | Network — `_check_unusual_external()` |
+| T1571 | Non-Standard Port | Network — `_check_suspicious_ports()` |
+
+---
+
+## Integration with Nebula Forge
+
+### Wazuh export pipeline
+
+EndpointForge is designed to run on an endpoint where the Wazuh agent is installed. Findings flow to the Wazuh server automatically once the agent is configured.
+
+**Step 1 — setup the log directory:**
+
+```
+POST /api/wazuh/setup
+```
+
+Returns the ossec.conf snippet via `WazuhExporter._get_agent_config_instructions()`:
+
+```xml
+<!-- Windows: C:\Program Files (x86)\ossec-agent\ossec.conf -->
+<!-- Linux:   /var/ossec/etc/ossec.conf -->
+<ossec_config>
+  <localfile>
+    <log_format>json</log_format>
+    <location>C:\EndpointForge\logs\endpointforge.json</location>
+    <label key="log_type">endpointforge</label>
+  </localfile>
+</ossec_config>
+```
+
+**Step 2 — restart the agent:**
+
+```
+# Windows
+Restart-Service WazuhSvc
+
+# Linux
+sudo systemctl restart wazuh-agent
+```
+
+**Step 3 — export findings after each scan:**
+
+```
+POST /api/wazuh/export
+{"scan_data": <full scan result>}
+```
+
+Each finding writes one NDJSON line. A scan summary entry is appended as the final line. The Wazuh manager decodes using `wazuh/endpointforge_decoder.xml` and fires rules from `wazuh/endpointforge_rules.xml` (IDs 100200–100265) with MITRE ATT&CK tags.
+
+**Check exporter status:**
+
+```
+GET /api/wazuh/status
+# Returns: log_path, log_exists, log_size_bytes, entry_count, os, hostname
+```
+
+**Preview NDJSON format without writing to disk:**
+
+```
+GET /api/wazuh/demo
+```
+
+### Closed-loop validation with SigmaForge
+
+EndpointForge and SigmaForge form a closed-loop detection validation pipeline:
+
+```
+SigmaForge → Wazuh XML rules → Wazuh server
+EndpointForge → NDJSON findings → Wazuh agent → Wazuh server
+```
+
+When both are deployed:
+1. SigmaForge authors a detection rule and converts it to Wazuh XML
+2. The rule is deployed to the Wazuh server
+3. EndpointForge runs on the endpoint and exports findings as NDJSON via `WazuhExporter.export_findings()`
+4. The Wazuh agent ships the NDJSON to the server
+5. If the rule fires against an EndpointForge finding, detection is confirmed
+6. If not, the detection gap surfaces back to SigmaForge for rule refinement
+
+This pipeline requires no pySigma dependency — SigmaForge uses a custom conversion engine with a native Wazuh XML backend.
+
+### SIREN handoff
+
+EndpointForge reports export as Markdown (`.md`) or JSON (`.json`) to the `exports/` directory. The JSON format produced by `ReportGenerator._generate_json()` includes `report_metadata`, `summary`, `findings` (sorted by severity), `mitre_techniques`, and `raw_data` — structured for direct ingestion into a SIREN incident report as IOC and affected-system evidence.
+
+---
 
 ## Related Tools
 
