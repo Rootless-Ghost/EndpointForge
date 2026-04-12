@@ -4,7 +4,7 @@
   Deployment: Copy to /var/ossec/etc/rules/ on the Wazuh SERVER
   File: /var/ossec/etc/rules/endpointforge_rules.xml
 
-  Rule ID range: 100100 - 100199 (custom rule space)
+  Rule ID range: 100200 - 100265 (custom rule space)
   These rules fire alerts based on EndpointForge findings decoded
   by endpointforge_decoder.xml.
 
@@ -25,7 +25,7 @@
        BASE RULE: Catches any EndpointForge event
        ════════════════════════════════════════════ -->
 
-  <rule id="100100" level="3">
+  <rule id="100200" level="3">
     <decoded_as>endpointforge</decoded_as>
     <description>EndpointForge: Event received</description>
     <group>endpointforge,</group>
@@ -35,8 +35,8 @@
        SCAN SUMMARY
        ════════════════════════════════════════════ -->
 
-  <rule id="100101" level="3">
-    <if_sid>100100</if_sid>
+  <rule id="100201" level="3">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.type">scan_complete</field>
     <description>EndpointForge: Scan completed on $(agent.name)</description>
     <group>endpointforge,scan_summary,</group>
@@ -47,32 +47,32 @@
        ════════════════════════════════════════════ -->
 
   <!-- CRITICAL findings → Wazuh level 14 -->
-  <rule id="100110" level="14">
-    <if_sid>100100</if_sid>
+  <rule id="100210" level="14">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.severity">critical</field>
     <description>EndpointForge CRITICAL: $(endpointforge.message)</description>
     <group>endpointforge,attack.execution,</group>
   </rule>
 
   <!-- HIGH findings → Wazuh level 12 -->
-  <rule id="100111" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100211" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.severity">high</field>
     <description>EndpointForge HIGH: $(endpointforge.message)</description>
     <group>endpointforge,</group>
   </rule>
 
   <!-- MEDIUM findings → Wazuh level 8 -->
-  <rule id="100112" level="8">
-    <if_sid>100100</if_sid>
+  <rule id="100212" level="8">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.severity">medium</field>
     <description>EndpointForge MEDIUM: $(endpointforge.message)</description>
     <group>endpointforge,</group>
   </rule>
 
   <!-- LOW findings → Wazuh level 4 -->
-  <rule id="100113" level="4">
-    <if_sid>100100</if_sid>
+  <rule id="100213" level="4">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.severity">low</field>
     <description>EndpointForge LOW: $(endpointforge.message)</description>
     <group>endpointforge,</group>
@@ -83,8 +83,8 @@
        ════════════════════════════════════════════ -->
 
   <!-- Core process masquerading (wrong path) -->
-  <rule id="100120" level="14">
-    <if_sid>100100</if_sid>
+  <rule id="100220" level="14">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">processes</field>
     <field name="endpointforge.type">wrong_path</field>
     <description>EndpointForge: Core process running from wrong path — $(endpointforge.message)</description>
@@ -95,8 +95,8 @@
   </rule>
 
   <!-- Core process wrong parent -->
-  <rule id="100121" level="14">
-    <if_sid>100100</if_sid>
+  <rule id="100221" level="14">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">processes</field>
     <field name="endpointforge.type">wrong_parent</field>
     <description>EndpointForge: Process has unexpected parent — $(endpointforge.message)</description>
@@ -107,8 +107,8 @@
   </rule>
 
   <!-- Excess process instances -->
-  <rule id="100122" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100222" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">processes</field>
     <field name="endpointforge.type">excess_instances</field>
     <description>EndpointForge: Unexpected process instance count — $(endpointforge.message)</description>
@@ -119,8 +119,8 @@
   </rule>
 
   <!-- Suspicious process detected -->
-  <rule id="100123" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100223" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">processes</field>
     <field name="endpointforge.type">suspicious_process</field>
     <description>EndpointForge: Suspicious process — $(endpointforge.message)</description>
@@ -131,8 +131,8 @@
   </rule>
 
   <!-- Suspicious command line -->
-  <rule id="100124" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100224" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">processes</field>
     <field name="endpointforge.type">suspicious_cmdline</field>
     <description>EndpointForge: Suspicious command line — $(endpointforge.message)</description>
@@ -143,8 +143,8 @@
   </rule>
 
   <!-- Process in suspicious path -->
-  <rule id="100125" level="8">
-    <if_sid>100100</if_sid>
+  <rule id="100225" level="8">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">processes</field>
     <field name="endpointforge.type">suspicious_path</field>
     <description>EndpointForge: Process in suspicious path — $(endpointforge.message)</description>
@@ -159,8 +159,8 @@
        ════════════════════════════════════════════ -->
 
   <!-- Suspicious listener (shell/netcat) -->
-  <rule id="100130" level="14">
-    <if_sid>100100</if_sid>
+  <rule id="100230" level="14">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">network</field>
     <field name="endpointforge.type">suspicious_listener</field>
     <description>EndpointForge: High-risk process listening — $(endpointforge.message)</description>
@@ -171,8 +171,8 @@
   </rule>
 
   <!-- Suspicious port connection -->
-  <rule id="100131" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100231" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">network</field>
     <field name="endpointforge.type">suspicious_port</field>
     <description>EndpointForge: Connection on suspicious port — $(endpointforge.message)</description>
@@ -183,8 +183,8 @@
   </rule>
 
   <!-- Unusual external connection -->
-  <rule id="100132" level="8">
-    <if_sid>100100</if_sid>
+  <rule id="100232" level="8">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">network</field>
     <field name="endpointforge.type">unusual_external_connection</field>
     <description>EndpointForge: Unusual external connection — $(endpointforge.message)</description>
@@ -199,8 +199,8 @@
        ════════════════════════════════════════════ -->
 
   <!-- Critical system file modified -->
-  <rule id="100140" level="14">
-    <if_sid>100100</if_sid>
+  <rule id="100240" level="14">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">filesystem</field>
     <field name="endpointforge.type">critical_file_modified</field>
     <description>EndpointForge: Critical file modified — $(endpointforge.message)</description>
@@ -211,8 +211,8 @@
   </rule>
 
   <!-- Critical file missing -->
-  <rule id="100141" level="14">
-    <if_sid>100100</if_sid>
+  <rule id="100241" level="14">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">filesystem</field>
     <field name="endpointforge.type">critical_file_missing</field>
     <description>EndpointForge: Critical file missing — $(endpointforge.message)</description>
@@ -223,8 +223,8 @@
   </rule>
 
   <!-- New suspicious file -->
-  <rule id="100142" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100242" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">filesystem</field>
     <field name="endpointforge.type">new_file</field>
     <description>EndpointForge: New file detected — $(endpointforge.message)</description>
@@ -235,8 +235,8 @@
   </rule>
 
   <!-- File hash changed -->
-  <rule id="100143" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100243" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">filesystem</field>
     <field name="endpointforge.type">file_modified</field>
     <description>EndpointForge: File hash changed — $(endpointforge.message)</description>
@@ -247,8 +247,8 @@
   </rule>
 
   <!-- File deleted -->
-  <rule id="100144" level="8">
-    <if_sid>100100</if_sid>
+  <rule id="100244" level="8">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">filesystem</field>
     <field name="endpointforge.type">file_deleted</field>
     <description>EndpointForge: File removed — $(endpointforge.message)</description>
@@ -263,8 +263,8 @@
        ════════════════════════════════════════════ -->
 
   <!-- Suspicious registry value -->
-  <rule id="100150" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100250" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">registry</field>
     <field name="endpointforge.type">suspicious_registry_value</field>
     <description>EndpointForge: Suspicious registry value — $(endpointforge.message)</description>
@@ -279,8 +279,8 @@
        ════════════════════════════════════════════ -->
 
   <!-- Suspicious scheduled task -->
-  <rule id="100160" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100260" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">persistence</field>
     <field name="endpointforge.type">suspicious_scheduled_task</field>
     <description>EndpointForge: Suspicious scheduled task — $(endpointforge.message)</description>
@@ -291,8 +291,8 @@
   </rule>
 
   <!-- Suspicious service -->
-  <rule id="100161" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100261" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">persistence</field>
     <field name="endpointforge.type">suspicious_service</field>
     <description>EndpointForge: Suspicious service — $(endpointforge.message)</description>
@@ -303,8 +303,8 @@
   </rule>
 
   <!-- Suspicious startup item -->
-  <rule id="100162" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100262" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">persistence</field>
     <field name="endpointforge.type">suspicious_startup_item</field>
     <description>EndpointForge: Suspicious startup item — $(endpointforge.message)</description>
@@ -315,8 +315,8 @@
   </rule>
 
   <!-- Suspicious cron job -->
-  <rule id="100163" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100263" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">persistence</field>
     <field name="endpointforge.type">suspicious_cron_job</field>
     <description>EndpointForge: Suspicious cron job — $(endpointforge.message)</description>
@@ -327,8 +327,8 @@
   </rule>
 
   <!-- Suspicious systemd service -->
-  <rule id="100164" level="12">
-    <if_sid>100100</if_sid>
+  <rule id="100264" level="12">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">persistence</field>
     <field name="endpointforge.type">suspicious_systemd_service</field>
     <description>EndpointForge: Suspicious systemd service — $(endpointforge.message)</description>
@@ -339,8 +339,8 @@
   </rule>
 
   <!-- Suspicious shell config -->
-  <rule id="100165" level="8">
-    <if_sid>100100</if_sid>
+  <rule id="100265" level="8">
+    <if_sid>100200</if_sid>
     <field name="endpointforge.module">persistence</field>
     <field name="endpointforge.type">suspicious_shell_config</field>
     <description>EndpointForge: Suspicious shell config — $(endpointforge.message)</description>

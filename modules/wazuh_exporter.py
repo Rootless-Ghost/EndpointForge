@@ -103,12 +103,12 @@ class WazuhExporter:
 
                 for finding in findings:
                     log_entry = self._format_finding(finding, module, timestamp)
-                    f.write(json.dumps(log_entry) + '\n')
+                    f.write(json.dumps(log_entry, separators=(',', ':')) + '\n')
                     exported += 1
 
             # Also write a scan summary entry
             summary_entry = self._format_scan_summary(scan_data, timestamp)
-            f.write(json.dumps(summary_entry) + '\n')
+            f.write(json.dumps(summary_entry, separators=(',', ':')) + '\n')
             exported += 1
 
         return {
@@ -127,7 +127,7 @@ class WazuhExporter:
         log_entry = self._format_finding(finding, module, timestamp)
 
         with open(self.log_path, 'a') as f:
-            f.write(json.dumps(log_entry) + '\n')
+            f.write(json.dumps(log_entry, separators=(',', ':')) + '\n')
 
         return {'status': 'success', 'log_path': self.log_path}
 
