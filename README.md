@@ -122,7 +122,8 @@ EndpointForge/
 │   ├── registry_monitor.py     # Registry modification detection
 │   ├── persistence_monitor.py  # Persistence mechanism detection
 │   ├── report_generator.py     # Markdown/JSON report generation
-│   └── mitre_mapping.py        # MITRE ATT&CK technique reference
+│   ├── mitre_mapping.py        # MITRE ATT&CK technique reference
+│   └── wazuh_exporter.py       # NDJSON log export for Wazuh agent ingestion
 ├── templates/
 │   ├── base.html               # Base layout with sidebar navigation
 │   ├── dashboard.html          # Main dashboard
@@ -136,7 +137,10 @@ EndpointForge/
 │   ├── css/style.css           # Dark theme stylesheet
 │   └── js/main.js              # Frontend JavaScript
 ├── baselines/                  # FIM baseline storage
-└── exports/                    # Generated reports
+├── exports/                    # Generated reports
+└── wazuh/
+    ├── endpointforge_decoder.xml   # Wazuh manager decoder for EndpointForge JSON
+    └── endpointforge_rules.xml     # Custom rules (IDs 100200–100265) with MITRE tags
 ```
 
 ## MITRE ATT&CK Coverage
@@ -149,6 +153,13 @@ EndpointForge/
 | **Discovery** | T1057, T1049, T1083 |
 | **Command and Control** | T1071.001, T1571 |
 
+## Related Tools
+
+| Tool | Description | Link |
+|------|-------------|------|
+| **SigmaForge** | Sigma rule generator — converts to Wazuh XML rules that detect EndpointForge findings | [GitHub](https://github.com/Rootless-Ghost/SigmaForge) |
+| **EndpointTriage** | PowerShell forensic collector for Windows endpoint IR | [GitHub](https://github.com/Rootless-Ghost/EndpointTriage) |
+
 ## Tech Stack
 
 - **Backend:** Python, Flask
@@ -160,9 +171,9 @@ EndpointForge/
 ## Roadmap
 
 ### v1.1 — Wazuh SIEM Integration
-- [ ] JSON log export to Wazuh agent monitored path (`/var/ossec/logs/endpointforge/`)
-- [ ] Custom Wazuh decoder for EndpointForge JSON log format
-- [ ] Custom Wazuh rules mapped to MITRE ATT&CK from EndpointForge findings
+- [x] JSON log export to Wazuh agent monitored path (`/var/ossec/logs/endpointforge/`)
+- [x] Custom Wazuh decoder for EndpointForge JSON log format
+- [x] Custom Wazuh rules mapped to MITRE ATT&CK from EndpointForge findings
 - [ ] Wazuh Active Response mode — auto-trigger scans when a rule fires on the endpoint
 - [ ] Dashboard integration — EndpointForge findings visible in Wazuh MITRE ATT&CK panel
 
