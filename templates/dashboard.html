@@ -20,8 +20,14 @@
         <button class="btn" onclick="loadDemoData('full')">
             &#x1F4E1; Load Demo Data
         </button>
+        <button class="btn btn-triage" id="triage-btn" onclick="runTriage()">
+            &#x1F9EA; Run Full Triage
+        </button>
     </div>
 </div>
+
+<!-- Triage Result -->
+<div id="triage-result" style="display:none;" class="triage-result-bar"></div>
 
 <!-- Severity Stats -->
 <div class="stats-grid">
@@ -74,4 +80,49 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function runTriage() {
+    const btn = document.getElementById('triage-btn');
+    const bar = document.getElementById('triage-result');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Running Triage\u2026';
+    bar.style.display = 'none';
+    bar.className = 'triage-result-bar';
+
+    try {
+        const resp = await fetch('/api/triage/run', { method: 'POST' });
+        const data = await resp.json();
+
+        bar.style.display = 'block';
+        if (data.status === 'success') {
+            bar.classList.add('triage-success');
+            bar.innerHTML = '&#x2713; Triage complete &mdash; output saved to: <code>' +
+                escapeHtml(data.output_path || 'configured output path') + '</code>';
+        } else {
+            bar.classList.add('triage-error');
+            bar.innerHTML = '&#x2717; Triage failed: ' + escapeHtml(data.message || 'Unknown error') +
+                (data.stderr ? '<pre class="triage-stderr">' + escapeHtml(data.stderr) + '</pre>' : '');
+        }
+    } catch (err) {
+        bar.style.display = 'block';
+        bar.classList.add('triage-error');
+        bar.innerHTML = '&#x2717; Request failed: ' + escapeHtml(err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '&#x1F9EA; Run Full Triage';
+    }
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+</script>
 {% endblock %}

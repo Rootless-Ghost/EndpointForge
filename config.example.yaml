@@ -1,0 +1,9 @@
+# EndpointForge configuration — example
+# ======================================
+# Copy to config.yaml and update paths for your environment.
+
+# Path to Invoke-EndpointTriage.ps1
+endpoint_triage_script: "/path/to/EndpointTriage/Invoke-EndpointTriage.ps1"
+
+# Directory where EndpointTriage writes output folders
+endpoint_triage_output: "/path/to/EndpointTriage/TriageOutput"
