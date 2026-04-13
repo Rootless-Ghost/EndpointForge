@@ -103,7 +103,7 @@ wazuh_exp       = WazuhExporter()
 
 os.makedirs('exports', exist_ok=True)
 os.makedirs('baselines', exist_ok=True)
-app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+app.run(debug=debug_mode, host='0.0.0.0', port=5005)
 ```
 
 `debug_mode` reads `FLASK_DEBUG` from the environment (values `1`, `true`, or `yes` enable it).
@@ -133,6 +133,7 @@ app.run(debug=debug_mode, host='0.0.0.0', port=5000)
 | `/api/scan/registry` | POST | `api_scan_registry()` — returns `os_supported: false` on non-Windows |
 | `/api/scan/persistence` | POST | `api_scan_persistence()` |
 | `/api/scan/full` | POST | `api_full_scan()` — all modules; registry only on Windows |
+| `/api/triage/run` | POST | `api_triage_run()` — run `Invoke-EndpointTriage.ps1` via subprocess; script and output paths configured in `config.yaml` |
 | `/api/report/generate` | POST | `api_generate_report()` — accepts `{"scan_data": ..., "format": "markdown"\|"json"}` |
 | `/api/report/export` | POST | `api_export_report()` — saves to `exports/EndpointForge_Report_{timestamp}.{ext}` |
 
@@ -287,7 +288,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Navigate to `http://localhost:5000` in your browser.
+Navigate to `http://localhost:5005` in your browser.
 
 ### Requirements
 
@@ -302,7 +303,7 @@ Navigate to `http://localhost:5000` in your browser.
 ```bash
 # Start the web UI
 python app.py
-# → http://0.0.0.0:5000
+# → http://0.0.0.0:5005
 
 # Enable debug mode
 FLASK_DEBUG=1 python app.py
@@ -310,7 +311,7 @@ FLASK_DEBUG=1 python app.py
 
 **First-run workflow:**
 
-1. Open `http://localhost:5000`
+1. Open `http://localhost:5005`
 2. Click **Run Full Scan** — processes, network, filesystem (check mode), and persistence run immediately; registry is added automatically on Windows
 3. Review findings by severity on the dashboard or drill into individual module pages
 4. Open **Reports** → Generate Markdown or JSON → Export `.md` / `.json` to `exports/`
@@ -528,6 +529,19 @@ This pipeline requires no pySigma dependency — SigmaForge uses a custom conver
 ### SIREN handoff
 
 EndpointForge reports export as Markdown (`.md`) or JSON (`.json`) to the `exports/` directory. The JSON format produced by `ReportGenerator._generate_json()` includes `report_metadata`, `summary`, `findings` (sorted by severity), `mitre_techniques`, and `raw_data` — structured for direct ingestion into a SIREN incident report as IOC and affected-system evidence.
+
+### EndpointForge → ir-chain (on-demand triage)
+
+The **Run Full Triage** button on the dashboard calls `POST /api/triage/run`, which launches `Invoke-EndpointTriage.ps1` via subprocess. The script writes a timestamped `HOSTNAME_YYYYMMDD_HHMMSS` output folder to the directory configured as `endpoint_triage_output` in `config.yaml`.
+
+ir-chain watches that same directory. When the new case folder appears, ir-chain automatically picks it up, runs log-analyzer against the `eventlogs/Security.csv`, builds a structured SIREN incident payload from the findings, and POSTs it to SIREN — completing the triage-to-report pipeline from a single button click.
+
+Configure the triage script and output paths in `config.yaml` (gitignored):
+
+```yaml
+endpoint_triage_script: "/path/to/EndpointTriage/Invoke-EndpointTriage.ps1"
+endpoint_triage_output: "/path/to/EndpointTriage/TriageOutput"
+```
 
 ---
 
