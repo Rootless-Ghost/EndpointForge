@@ -182,3 +182,7 @@ cython_debug/
 
 # EndpointForge local config (contains absolute paths)
 config.yaml
+
+# Runtime output — scan exports and FIM baselines
+exports/
+baselines/
