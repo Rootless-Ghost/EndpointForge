@@ -1,7 +1,7 @@
 # EndpointForge → Wazuh Integration Guide
 
 ## Your Environment
-- **Wazuh Server:** 192.168.46.100
+- **Wazuh Server:** <YOUR_WAZUH_IP>
 - **Agents:** SOC Ubuntu, Kali, Kali Purple, Windows 11 VM
 - **EndpointForge** runs on the agent endpoints and writes JSON findings to a log file
 - **Wazuh agent** monitors that log file and ships entries to the server
@@ -14,7 +14,7 @@
 SSH into your Wazuh server:
 
 ```bash
-ssh user@192.168.46.100
+ssh user@<YOUR_WAZUH_IP>
 ```
 
 Copy the decoder file:
@@ -180,7 +180,7 @@ Expected output should show:
 
 ## Step 5: Verify in Wazuh Dashboard
 
-1. Open Wazuh dashboard: `https://192.168.46.100`
+1. Open Wazuh dashboard: `https://<YOUR_WAZUH_IP>`
 2. Go to **Security Events** — EndpointForge alerts should appear with the `endpointforge` group
 3. Go to **MITRE ATT&CK** — technique IDs from EndpointForge findings should map to the MITRE visualization
 4. Filter by: `rule.groups: endpointforge`
@@ -224,7 +224,7 @@ Expected output should show:
 sudo systemctl status wazuh-agent
 
 # Check agent can reach server
-ping 192.168.46.100
+ping <YOUR_WAZUH_IP>
 
 # Check agent config has correct server IP
 grep '<address>' /var/ossec/etc/ossec.conf
