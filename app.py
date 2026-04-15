@@ -426,7 +426,7 @@ def api_triage_run():
         return jsonify({'status': 'error', 'message': 'Triage timed out after 5 minutes'}), 500
     except Exception as exc:
         logger.exception("Failed to launch Invoke-EndpointTriage.ps1")
-        return jsonify({'status': 'error', 'message': str(exc)}), 500
+        return jsonify({'status': 'error', 'message': 'Failed to start triage process'}), 500
 
     if proc.returncode != 0:
         return jsonify({
