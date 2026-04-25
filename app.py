@@ -30,6 +30,15 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 
+
+@app.after_request
+def _set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
+
+
 # Detect OS at startup
 CURRENT_OS = platform.system().lower()  # 'windows' or 'linux'
 
