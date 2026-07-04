@@ -62,6 +62,10 @@ def _load_config() -> dict:
 
 _config = _load_config()
 
+DEMO_MODE: bool = os.environ.get("ENDPOINT_DEMO_MODE", "0").lower() in ("1", "true", "yes")
+if DEMO_MODE:
+    logger.info("DEMO MODE enabled — all scan endpoints will return simulated data")
+
 # Initialize modules
 process_mon = ProcessMonitor()
 network_mon = NetworkMonitor()
@@ -145,7 +149,7 @@ def api_system_info():
 def api_scan_processes():
     """Scan running processes and analyze for anomalies."""
     try:
-        results = process_mon.scan()
+        results = process_mon.get_demo_data() if DEMO_MODE else process_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
         logger.exception("Error during process scan")
@@ -156,7 +160,7 @@ def api_scan_processes():
 def api_scan_network():
     """Scan active network connections."""
     try:
-        results = network_mon.scan()
+        results = network_mon.get_demo_data() if DEMO_MODE else network_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
         logger.exception("Error during network scan")
@@ -167,9 +171,12 @@ def api_scan_network():
 def api_scan_filesystem():
     """Scan filesystem for integrity changes."""
     try:
-        mode = request.json.get('mode', 'baseline')  # 'baseline' or 'check'
-        paths = request.json.get('paths', [])
-        results = filesystem_mon.scan(mode=mode, custom_paths=paths)
+        if DEMO_MODE:
+            results = filesystem_mon.get_demo_data()
+        else:
+            mode = request.json.get('mode', 'baseline')  # 'baseline' or 'check'
+            paths = request.json.get('paths', [])
+            results = filesystem_mon.scan(mode=mode, custom_paths=paths)
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
         logger.exception("Error during filesystem scan")
@@ -180,6 +187,9 @@ def api_scan_filesystem():
 def api_scan_registry():
     """Scan Windows registry for suspicious modifications."""
     try:
+        if DEMO_MODE:
+            results = registry_mon.get_demo_data()
+            return jsonify({'status': 'success', 'data': results})
         if CURRENT_OS != 'windows':
             return jsonify({
                 'status': 'info',
@@ -197,7 +207,7 @@ def api_scan_registry():
 def api_scan_persistence():
     """Scan for persistence mechanisms."""
     try:
-        results = persistence_mon.scan()
+        results = persistence_mon.get_demo_data() if DEMO_MODE else persistence_mon.scan()
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
         logger.exception("Error during persistence scan")
@@ -208,17 +218,29 @@ def api_scan_persistence():
 def api_full_scan():
     """Run a complete endpoint scan across all modules."""
     try:
-        results = {
-            'scan_time': datetime.now().isoformat(),
-            'os': CURRENT_OS,
-            'hostname': platform.node(),
-            'processes': process_mon.scan(),
-            'network': network_mon.scan(),
-            'filesystem': filesystem_mon.scan(mode='check'),
-            'persistence': persistence_mon.scan()
-        }
-        if CURRENT_OS == 'windows':
-            results['registry'] = registry_mon.scan()
+        if DEMO_MODE:
+            results = {
+                'scan_time': datetime.now().isoformat(),
+                'os': CURRENT_OS,
+                'hostname': platform.node(),
+                'processes': process_mon.get_demo_data(),
+                'network': network_mon.get_demo_data(),
+                'filesystem': filesystem_mon.get_demo_data(),
+                'registry': registry_mon.get_demo_data(),
+                'persistence': persistence_mon.get_demo_data(),
+            }
+        else:
+            results = {
+                'scan_time': datetime.now().isoformat(),
+                'os': CURRENT_OS,
+                'hostname': platform.node(),
+                'processes': process_mon.scan(),
+                'network': network_mon.scan(),
+                'filesystem': filesystem_mon.scan(mode='check'),
+                'persistence': persistence_mon.scan()
+            }
+            if CURRENT_OS == 'windows':
+                results['registry'] = registry_mon.scan()
 
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
