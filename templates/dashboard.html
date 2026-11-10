@@ -94,7 +94,7 @@ async function runTriage() {
     bar.className = 'triage-result-bar';
 
     try {
-        const resp = await fetch('/api/triage/run', { method: 'POST' });
+        const resp = await fetch('/api/triage/run', { method: 'POST', headers: csrfHeaders() });
         const data = await resp.json();
 
         bar.style.display = 'block';
