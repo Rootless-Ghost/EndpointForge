@@ -7,7 +7,7 @@ Author: Rootless-Ghost
 Version: 1.1.0
 """
 
-from flask import Flask, render_template, request, jsonify, send_file, session, redirect
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from datetime import datetime
 import hmac
 import ipaddress
@@ -96,7 +96,8 @@ def _enforce_access_control():
         session.clear()
         session['authenticated'] = True
         session['csrf_token'] = secrets.token_urlsafe(32)
-        return redirect(request.path)
+        # Always land on the dashboard; never redirect to a request-supplied path.
+        return redirect(url_for('dashboard'))
 
     # Scripted clients (curl, automation) can send the token as a bearer
     # header instead. Browsers can't attach this header cross-origin without
@@ -265,9 +266,13 @@ def api_scan_filesystem():
         if DEMO_MODE:
             results = filesystem_mon.get_demo_data()
         else:
-            mode = request.json.get('mode', 'baseline')  # 'baseline' or 'check'
-            paths = request.json.get('paths', [])
-            results = filesystem_mon.scan(mode=mode, custom_paths=paths)
+            # Only the scan mode is accepted from the client. Monitored paths
+            # come from the built-in DEFAULT_PATHS list, never from the request.
+            body = request.get_json(silent=True) or {}
+            mode = body.get('mode', 'baseline')
+            if mode not in ('baseline', 'check'):
+                return jsonify({'status': 'error', 'message': "mode must be 'baseline' or 'check'"}), 400
+            results = filesystem_mon.scan(mode=mode)
         return jsonify({'status': 'success', 'data': results})
     except Exception as e:
         logger.exception("Error during filesystem scan")

@@ -75,7 +75,8 @@ class FileSystemMonitor:
         mode: 'baseline' to create new baseline, 'check' to compare against existing
         custom_paths: optional list of additional paths to monitor
         """
-        paths = DEFAULT_PATHS.get(self.os_type, [])
+        # Copy so custom paths never leak into the module-level defaults.
+        paths = list(DEFAULT_PATHS.get(self.os_type, []))
         if custom_paths:
             paths.extend(custom_paths)
 
