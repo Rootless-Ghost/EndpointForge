@@ -13,6 +13,8 @@ A lightweight host-based intrusion detection and endpoint triage tool with MITRE
 
 </div>
 
+> **Lab-grade tooling.** Built and tested in a home detection-engineering lab. Works as documented, but isn't hardened for production or multi-user deployment. See SECURITY.md for scope.
+
 ---
 
 ## Overview
