@@ -8,10 +8,16 @@ let isScanning = false;
 let isDemoMode = false;
 
 // ── API Helpers ──
+// Every /api/ call must carry the per-session CSRF token from base.html.
+function csrfHeaders(extra = {}) {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return Object.assign({ 'X-CSRF-Token': meta ? meta.content : '' }, extra);
+}
+
 async function apiCall(endpoint, method = 'GET', body = null) {
     const options = {
         method,
-        headers: { 'Content-Type': 'application/json' }
+        headers: csrfHeaders({ 'Content-Type': 'application/json' })
     };
     if (body) options.body = JSON.stringify(body);
 
@@ -393,7 +399,7 @@ async function exportReport(format = 'markdown') {
     try {
         const response = await fetch('/api/report/export', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
                 scan_data: currentScanData,
                 format: format

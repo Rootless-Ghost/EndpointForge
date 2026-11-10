@@ -103,10 +103,28 @@ wazuh_exp       = WazuhExporter()
 
 os.makedirs('exports', exist_ok=True)
 os.makedirs('baselines', exist_ok=True)
-app.run(debug=debug_mode, host='0.0.0.0', port=5005)
+app.run(debug=debug_mode, host=BIND_HOST, port=BIND_PORT)
 ```
 
-`debug_mode` reads `FLASK_DEBUG` from the environment (values `1`, `true`, or `yes` enable it).
+`debug_mode` reads `FLASK_DEBUG` from the environment (values `1`, `true`, or `yes` enable it). Debug mode is refused unless the server is bound to loopback.
+
+### Network binding & access control
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ENDPOINTFORGE_HOST` | `127.0.0.1` | Interface to bind. `0.0.0.0` = all interfaces (network-reachable) |
+| `ENDPOINTFORGE_PORT` | `5005` | Listening port |
+| `ENDPOINTFORGE_TOKEN` | random per start | Access token. Set it to keep the same token across restarts |
+| `FLASK_DEBUG` | `0` | Werkzeug debugger. Loopback only |
+
+Every page and `/api/` route requires authentication:
+
+- **Browser:** open the login URL printed at startup (`http://127.0.0.1:5005/?token=...`). It sets a session cookie, and the UI then sends a per-session CSRF token (`X-CSRF-Token`) with every API call.
+- **Scripts / curl:** send `Authorization: Bearer <token>`.
+
+```bash
+curl -H "Authorization: Bearer $ENDPOINTFORGE_TOKEN" http://127.0.0.1:5005/api/system-info
+```
 
 ### Flask routes
 
@@ -288,16 +306,16 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Navigate to `http://localhost:5005` in your browser.
+Open the login URL printed in the console (`http://127.0.0.1:5005/?token=...`).
 
 ### Docker (standalone)
 
 ```bash
 docker build -t endpointforge .
-docker run -p 5005:5005 endpointforge
+docker run -p 127.0.0.1:5005:5005 endpointforge
 ```
 
-Open http://localhost:5005
+Get the login URL from `docker logs <container>`. Publishing to `127.0.0.1:` keeps the port off your LAN; a bare `-p 5005:5005` exposes it on every host interface.
 
 ### Requirements
 
@@ -312,15 +330,18 @@ Open http://localhost:5005
 ```bash
 # Start the web UI
 python app.py
-# → http://0.0.0.0:5005
+# → [*] EndpointForge login URL: http://127.0.0.1:5005/?token=...
 
-# Enable debug mode
+# Enable debug mode (loopback only)
 FLASK_DEBUG=1 python app.py
+
+# Listen on all interfaces (isolated lab networks only)
+ENDPOINTFORGE_HOST=0.0.0.0 python app.py
 ```
 
 **First-run workflow:**
 
-1. Open `http://localhost:5005`
+1. Open the login URL printed in the console
 2. Click **Run Full Scan** — processes, network, filesystem (check mode), and persistence run immediately; registry is added automatically on Windows
 3. Review findings by severity on the dashboard or drill into individual module pages
 4. Open **Reports** → Generate Markdown or JSON → Export `.md` / `.json` to `exports/`
