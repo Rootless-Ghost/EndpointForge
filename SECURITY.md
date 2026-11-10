@@ -4,7 +4,8 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
+| 1.1.x   | :white_check_mark: |
+| 1.0.x   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -12,7 +13,7 @@ If you discover a security vulnerability in EndpointForge, please report it resp
 
 **Do not open a public issue for security vulnerabilities.**
 
-Instead, please send an email or direct message with:
+Instead, report it privately through GitHub: open the repository's **Security** tab and click **Report a vulnerability** (or go directly to [the private reporting form](https://github.com/Rootless-Ghost/EndpointForge/security/advisories/new)). Please include:
 
 1. Description of the vulnerability
 2. Steps to reproduce
@@ -30,3 +31,9 @@ EndpointForge is designed as a **security monitoring and triage tool** for autho
 - **Demo Mode:** The demo mode contains simulated attack data for portfolio and educational purposes only. No actual malicious activity is performed.
 - **Data Handling:** Scan results and baselines are stored locally. No data is transmitted externally.
 - **No Exploitation:** EndpointForge does not perform any offensive actions. It is a passive monitoring and analysis tool.
+
+## Security Advisories
+
+| Advisory | Severity | Affected | Fixed in |
+| -------- | -------- | -------- | -------- |
+| [GHSA-xqjv-256f-x94v](https://github.com/Rootless-Ghost/EndpointForge/security/advisories/GHSA-xqjv-256f-x94v) | Moderate | 1.0.x | 1.1.0 |

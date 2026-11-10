@@ -147,7 +147,7 @@ curl -H "Authorization: Bearer $ENDPOINTFORGE_TOKEN" http://127.0.0.1:5005/api/s
 | `/api/system-info` | GET | `api_system_info()` |
 | `/api/scan/processes` | POST | `api_scan_processes()` |
 | `/api/scan/network` | POST | `api_scan_network()` |
-| `/api/scan/filesystem` | POST | `api_scan_filesystem()` — accepts `{"mode": "baseline"\|"check", "paths": [...]}` |
+| `/api/scan/filesystem` | POST | `api_scan_filesystem()` — body `{"mode": "baseline"\|"check"}`; `mode` is required (400 if missing or invalid); monitored paths come from the built-in defaults (`DEFAULT_PATHS`) |
 | `/api/scan/registry` | POST | `api_scan_registry()` — returns `os_supported: false` on non-Windows |
 | `/api/scan/persistence` | POST | `api_scan_persistence()` |
 | `/api/scan/full` | POST | `api_full_scan()` — all modules; registry only on Windows |
