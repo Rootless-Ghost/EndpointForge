@@ -274,7 +274,7 @@ NDJSON entry structure:
   },
   "agent": { "name": "HOSTNAME", "ip": "192.168.x.x" },
   "source": "endpointforge",
-  "version": "1.0.0"
+  "version": "1.1.0"
 }
 ```
 

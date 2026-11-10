@@ -168,7 +168,7 @@ sudo /var/ossec/bin/wazuh-logtest
 Paste a sample log line (this is what EndpointForge outputs):
 
 ```json
-{"timestamp":"2025-03-23T15:30:00.000+0000","endpointforge":{"module":"processes","type":"wrong_path","severity":"critical","message":"svchost.exe running from unexpected path: C:\\Users\\Public\\Downloads\\svchost.exe","details":"Expected: C:\\Windows\\System32\\svchost.exe","process":"svchost.exe","pid":6672,"mitre":{"id":"T1036.005","technique":"Masquerading: Match Legitimate Name or Location"},"registry_key":"","value_name":""},"agent":{"name":"WORKSTATION-01","ip":"192.168.46.50"},"source":"endpointforge","version":"1.0.0"}
+{"timestamp":"2025-03-23T15:30:00.000+0000","endpointforge":{"module":"processes","type":"wrong_path","severity":"critical","message":"svchost.exe running from unexpected path: C:\\Users\\Public\\Downloads\\svchost.exe","details":"Expected: C:\\Windows\\System32\\svchost.exe","process":"svchost.exe","pid":6672,"mitre":{"id":"T1036.005","technique":"Masquerading: Match Legitimate Name or Location"},"registry_key":"","value_name":""},"agent":{"name":"WORKSTATION-01","ip":"192.168.46.50"},"source":"endpointforge","version":"1.1.0"}
 ```
 
 Expected output should show:
