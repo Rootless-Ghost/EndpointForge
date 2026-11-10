@@ -159,7 +159,7 @@ class WazuhExporter:
                 'ip': self._get_local_ip()
             },
             'source': 'endpointforge',
-            'version': '1.0.0'
+            'version': '1.1.0'
         }
 
     def _format_scan_summary(self, scan_data, timestamp):
@@ -199,7 +199,7 @@ class WazuhExporter:
                 'ip': self._get_local_ip()
             },
             'source': 'endpointforge',
-            'version': '1.0.0'
+            'version': '1.1.0'
         }
 
     def clear_log(self):
