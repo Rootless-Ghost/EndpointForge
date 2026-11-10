@@ -269,7 +269,9 @@ def api_scan_filesystem():
             # Only the scan mode is accepted from the client. Monitored paths
             # come from the built-in DEFAULT_PATHS list, never from the request.
             body = request.get_json(silent=True) or {}
-            mode = body.get('mode', 'baseline')
+            # Mode is required: a baseline overwrites known-good state, so it
+            # must never be the silent default.
+            mode = body.get('mode')
             if mode not in ('baseline', 'check'):
                 return jsonify({'status': 'error', 'message': "mode must be 'baseline' or 'check'"}), 400
             results = filesystem_mon.scan(mode=mode)
