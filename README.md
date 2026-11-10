@@ -39,7 +39,7 @@ EndpointForge monitors endpoints across four core security pillars, detecting su
 
 **Threat hunting and live triage on an endpoint where you have local or agent access.**
 
-1. **Baseline first** — run the filesystem module in `baseline` mode to SHA-256 hash the paths you care about. The baseline is saved to `baselines/fim_baseline_{os}.json`.
+1. **Baseline first** — run the filesystem module in `baseline` mode to SHA-256 hash the built-in monitored paths. The baseline is saved to `baselines/fim_baseline_{os}.json`.
 2. **Full scan** — `POST /api/scan/full` runs all five modules in one pass and returns a unified findings dict. On Windows, registry is included automatically; on Linux it is skipped with `os_supported: false`.
 3. **Triage findings** — severity levels are `critical / high / medium / low / info`. Each finding carries a MITRE technique ID and name so you can pivot directly to ATT&CK documentation.
 4. **Export to Wazuh** — `POST /api/wazuh/export` writes NDJSON to the log file. The Wazuh agent picks it up, the decoder fires, and rules generate alerts in the Wazuh dashboard — no manual log shipping.
@@ -350,14 +350,14 @@ ENDPOINTFORGE_HOST=0.0.0.0 python app.py
 
 ```
 POST /api/scan/filesystem
-{"mode": "baseline", "paths": []}
+{"mode": "baseline"}
 ```
 
 Then run integrity checks against the saved baseline:
 
 ```
 POST /api/scan/filesystem
-{"mode": "check", "paths": []}
+{"mode": "check"}
 ```
 
 **Demo mode (no live system access required):**
